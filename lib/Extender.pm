@@ -400,6 +400,37 @@ sub Extends {
     $scalar_thread->join();
 
     1;
+
+=head2 Updating existing methods on an object class
+
+    package MyClass;
+
+    sub new {
+        my $class = shift;
+        my $self = bless {}, $class;
+        return $self;
+    }
+
+    sub original_method {
+        return "Original method";
+    }
+
+    package main;
+
+    use Extender;
+
+    my $object = MyClass->new();
+
+    # Define a method with the same name as an existing method
+    Extends($object,
+        original_method => sub { return "New method"; },
+    );
+
+    # Using the extended method
+    print $object->original_method(), "\n";  # Outputs: New method
+
+    1;
+
 =cut
 
 =head1 AUTHOR
