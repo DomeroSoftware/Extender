@@ -7,38 +7,34 @@ Extender is a Perl module that facilitates the dynamic extension of objects with
 
 To install `Extender`, use CPAN or CPAN Minus:
 
-bash
-
+```bash
   cpan Extender
-
+```
 
 or
 
-bash
-
+```bash
   cpanm Extender
-
+```
 
 Installation from GitHub
 To install Extender directly from GitHub, you can clone the repository and use the Makefile.PL:
 
-bash
-
+```bash
   git clone https://github.com/DomeroSoftware/Extender.git
   cd Extender
   perl Makefile.PL
   make
   make test
   make install
-
+```
 This will clone the repository, generate the Makefile, build the module, run the tests, and install it on your system.
 
 ## Usage
 
 ### Extend an Object with Methods from a Module
 
-perl
-
+```perl
   use Extender;
 
   # Example: Extend an object with methods from a module
@@ -47,12 +43,11 @@ perl
 
   # Now $object can use any method from Some::Class
   $object->method1(1, 2, 3, 4);
-
+```
 
 ### Extend an Object with Custom Methods
 
-perl
-
+```perl
   use Extender;
 
   # Example: Extend an object with custom methods
@@ -65,12 +60,11 @@ perl
   # Using the added methods
   $object->greet('Alice');               # Output: Hello, Alice!
   $object->custom_method('Hello');       # Assuming some_function prints something
-
+```
 
 ### Adding Methods to Raw Reference Variables
 
-perl
-
+```perl
   use Extender;
 
   # Example 1: Hash reference
@@ -115,7 +109,7 @@ perl
 
     # Dereferencing and printing the manipulated scalar
     print $$scalar_ref, "\n";  # Outputs: Hello, Perl!
-
+```
 
 ## Exported Functions
 
