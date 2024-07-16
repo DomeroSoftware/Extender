@@ -75,14 +75,16 @@ all functions exported by C<$module> will be added as methods to C<$object>.
 
 sub Extend {
     my ($object, $module, @methods) = @_;
-    
-    # Load the module
-    eval "use $module";
-    die "Failed to load module $module: $@" if $@;
-    
+
+    # Check if the module is already loaded
+    unless (exists $INC{$module} || defined *{"${module}::"}) {
+        eval "require $module";
+        die "Failed to load module $module: $@" if $@;
+    }
+
     # Get list of functions exported by the module
     no strict 'refs';
-    
+
     # Add each specified function (or all if none specified) as a method to the object
     foreach my $func ($#methods > -1 ? @methods : @{"${module}::EXPORT"}) {
         *{ref($object) . "::$func"} = sub { unshift @_, $object; goto &{"${module}::$func"} };
@@ -126,7 +128,7 @@ sub Extends {
         no strict 'refs';
         if (ref $extend{$name} eq 'CODE') {
             # If $extend{$name} is a coderef, directly assign it
-            *{ref($object) . "::$name"} = sub { unshift @_, $object; goto &$extend{$name} };
+            *{ref($object) . "::$name"} = sub { unshift @_, $object; goto &{$extend{$name}} };
         }
         elsif (ref $extend{$name} eq 'SCALAR' && defined ${$extend{$name}} && ref ${$extend{$name}} eq 'CODE') {
             # If $method_ref is a reference to a scalar containing a coderef
