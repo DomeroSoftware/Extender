@@ -2,25 +2,50 @@
 
 ### Scenario 1: Extending an Object with Module Methods
 
+    package MyMethods;
+
+    use strict;
+    use warnings;
+    use Exporter 'import';
+    our @EXPORT = qw(increment_value display_value);
+
+    sub increment_value {
+        my ($self, $key) = @_;
+        $self->{$key}++ if exists $self->{$key};
+    }
+
+    sub display_value {
+        my ($self, $key) = @_;
+        print "$key: ", $self->{$key} // 'undefined', "\n";
+    }
+
     package MyObject;
 
     sub new {
         my $class = shift;
-        my $self = bless {}, $class;
+        my $self = bless { count => 0 }, $class;
         return $self;
     }
 
     package main;
 
+    use strict;
+    use warnings;
     use Extender;
 
     my $object = MyObject->new();
-    Extend($object, 'List::Util');  # Extend with List::Util methods
+
+    # Extend the object with methods from MyMethods
+    Extend($object, 'MyMethods');
 
     # Using extended methods
-    print $object->sum(1, 2, 3, 4), "\n";  # Outputs: 10 (sum of elements)
-    print $object->max(1, 2, 3, 4), "\n";  # Outputs: 4 (maximum value)
+    $object->increment_value('count');
+    $object->display_value('count');  # Outputs: count: 1
 
+    $object->increment_value('count');
+    $object->display_value('count');  # Outputs: count: 2
+
+    1;
 
 ### Scenario 2: Adding Custom Methods to an Object
 
@@ -48,14 +73,32 @@
     my @data = $object->get_data();
     print "Data: @data\n";  # Outputs: Data: Item 1 Item 2
 
+    1;
 
 ### Scenario 3: Extending Multiple Objects with Different Modules
+
+    package MyMethods;
+
+    use strict;
+    use warnings;
+    use Exporter 'import';
+    our @EXPORT = qw(increment_value display_value);
+
+    sub increment_value {
+        my ($self, $value) = @_;
+        $$self += $value;
+    }
+
+    sub display_value {
+        my ($self) = @_;
+        print "Value: $$self\n";
+    }
 
     package MyClass1;
 
     sub new {
         my $class = shift;
-        my $self = bless \"0", $class;
+        my $self = bless \0, $class;
         return $self;
     }
 
@@ -63,58 +106,154 @@
 
     sub new {
         my $class = shift;
-        my $self = bless \"0", $class;
+        my $self = bless \0, $class;
         return $self;
     }
 
     package main;
 
+    use strict;
+    use warnings;
     use Extender;
+    use MyMethods;
 
     my $object1 = MyClass1->new();
     my $object2 = MyClass2->new();
 
-    # Extend $object1 with List::Util methods
-    Extend($object1, 'List::Util');
+    # Extend $object1 with MyMethods
+    Extends($object1,
+        increment_value => \&MyMethods::increment_value,
+        display_value   => \&MyMethods::display_value,
+    );
 
-    # Extend $object2 with Scalar::Util methods
-    Extend($object2, 'Scalar::Util');
+    # Extend $object2 with MyMethods
+    Extends($object2,
+        increment_value => \&MyMethods::increment_value,
+        display_value   => \&MyMethods::display_value,
+    );
 
     # Using extended methods
-    print $object1->sum(1, 2, 3, 4), "\n";  # Outputs: 10 (sum of elements)
-    print $object2->blessed($object2), "\n";  # Outputs: MyClass2 (class name)
+    $object1->increment_value(10);
+    $object1->display_value();  # Outputs: Value: 10
 
+    $object2->increment_value(20);
+    $object2->display_value();  # Outputs: Value: 20
+
+    1;
 
 ### Scenario 4: Adding Methods to Raw References (Hash, Array, Scalar)
 
+    # PACKAGES
+    
+    package HashMethods;
+
+    use strict;
+    use warnings;
+    use Exporter 'import';
+    our @EXPORT = qw(set get);
+
+    sub set {
+        my ($self, $key, $value) = @_;
+        $self->{$key} = $value;
+    }
+
+    sub get {
+        my ($self, $key) = @_;
+        return $self->{$key};
+    }
+
+    1;
+
+    package ArrayMethods;
+
+    use strict;
+    use warnings;
+    use Exporter 'import';
+    our @EXPORT = qw(add get);
+
+    sub add {
+        my ($self, $item) = @_;
+        push @$self, $item;
+    }
+
+    sub get {
+        my ($self, $index) = @_;
+        return $self->[$index];
+    }
+
+    1;
+
+    package ScalarMethods;
+
+    use strict;
+    use warnings;
+    use Exporter 'import';
+    our @EXPORT = qw(set get substr length);
+
+    sub set {
+        my ($self, $value) = @_;
+        $$self = $value;
+    }
+
+    sub get {
+        my ($self) = @_;
+        return $$self;
+    }
+
+    sub substr {
+        my $self = shift;
+        return substr($$self, @_);
+    }
+
+    sub length {
+        my ($self) = @_;
+        return length $$self;
+    }
+
+    1;
+
+    # MAIN 
+
     package main;
 
+    use strict;
+    use warnings;
     use Extender;
+    use HashMethods;
+    use ArrayMethods;
+    use ScalarMethods;
 
     my $hash_object = {};
     my $array_object = [];
     my $scalar_object = \"";
 
-    # Extend $hash_object with methods
-    Extend($hash_object, 'HashMethods', 'set_value', 'get_value');
+    # Extend $hash_object with methods from HashMethods
+    Extend($hash_object, 'HashMethods', 'set', 'get');
 
-    # Extend $array_object with methods
-    Extend($array_object, 'ArrayMethods', 'add_item', 'get_item');
+    # Extend $array_object with methods from ArrayMethods
+    Extend($array_object, 'ArrayMethods', 'add', 'get');
 
-    # Extend $scalar_object (assuming it contains a hash reference)
+    # Extend $scalar_object with methods from ScalarMethods
     Extend($scalar_object, 'ScalarMethods', 'set', 'get', 'substr', 'length');
 
-    # Using extended methods
-    $hash_object->set_value('key', 'value');
-    print $hash_object->get_value('key'), "\n";  # Outputs: value
+    # Using extended methods for hash object
+    $hash_object->set('key', 'value');
+    print $hash_object->get('key'), "\n";  # Outputs: value
 
-    $array_object->add_item('item1');
-    $array_object->add_item('item2');
-    print $array_object->get_item(0), "\n";  # Outputs: item1
+    # Using extended methods for array object
+    $array_object->add('item1');
+    $array_object->add('item2');
+    print $array_object->get(0), "\n";  # Outputs: item1
 
+    # Using extended methods for scalar object
     $scalar_object->set('John');
     print $scalar_object->get(), "\n";  # Outputs: John
+    print $scalar_object->length(), "\n";  # Outputs: 4
+    print $scalar_object->substr(1, 2), "\n";  # Outputs: oh
+    $scalar_object->substr(1, 2, "ane");
+    print $scalar_object->get(), "\n";  # Outputs: Jane
 
+    1;
 
 ### Scenario 5: Using Reference to Scalar with Code Ref
 
@@ -131,6 +270,7 @@
     # Using extended method
     print $object->greet('Alice'), "\n";  # Outputs: Hello, Alice!
 
+    1;
 
 ### Scenario 6: Used on shared variables
 
@@ -239,3 +379,4 @@
     $array_thread->join();
     $scalar_thread->join();
 
+    1;
