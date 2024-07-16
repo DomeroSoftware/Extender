@@ -13,6 +13,7 @@
     package main;
 
     use Extender;
+
     my $object = MyObject->new();
     Extend($object, 'List::Util');  # Extend with List::Util methods
 
@@ -32,6 +33,7 @@
     }
 
     package main;
+
     use Extender;
 
     my $object = MyDataStructure->new();
@@ -66,6 +68,7 @@
     }
 
     package main;
+
     use Extender;
 
     my $object1 = MyClass1->new();
@@ -85,6 +88,7 @@
 ### Scenario 4: Adding Methods to Raw References (Hash, Array, Scalar)
 
     package main;
+
     use Extender;
 
     my $hash_object = {};
@@ -115,6 +119,7 @@
 ### Scenario 5: Using Reference to Scalar with Code Ref
 
     package main;
+
     use Extender;
 
     my $object = {};
@@ -127,7 +132,7 @@
     print $object->greet('Alice'), "\n";  # Outputs: Hello, Alice!
 
 
-### Scenario 6: Used on shared data
+### Scenario 6: Used on shared variables
 
     package main;
 
@@ -137,112 +142,100 @@
     use threads::shared;
     use Extender;
 
-    # Define shared data structures
+    # Example methods to manipulate shared data
+
+    # Method to set data in a shared hash
+    sub set_hash_data {
+        my ($self, $key, $value) = @_;
+        lock(%{$self});
+        $self->{$key} = $value;
+    }
+
+    # Method to get data from a shared hash
+    sub get_hash_data {
+        my ($self, $key) = @_;
+        lock(%{$self});
+        return $self->{$key};
+    }
+
+    # Method to add item to a shared array
+    sub add_array_item {
+        my ($self, $item) = @_;
+        lock(@{$self});
+        push @{$self}, $item;
+    }
+
+    # Method to get item from a shared array
+    sub get_array_item {
+        my ($self, $index) = @_;
+        lock(@{$self});
+        return $self->[$index];
+    }
+
+    # Method to set data in a shared scalar
+    sub set_scalar_data {
+        my ($self, $value) = @_;
+        lock(${$self});
+        ${$self} = $value;
+    }
+
+    # Method to get data from a shared scalar
+    sub get_scalar_data {
+        my ($self) = @_;
+        lock(${$self});
+        return ${$self};
+    }
+
+    # Create shared data structures
     my %shared_hash :shared;
     my @shared_array :shared;
     my $shared_scalar :shared;
 
-    # Example method to set data in shared hash (simulated delay)
-    sub set_hash_data {
-        my ($self, $key, $value) = @_;
-        lock(%{$self});  # Lock the shared hash for write
-        sleep 1;  # Simulate some time-consuming operation
-        $self->{$key} = $value;
-        unlock(%{$self});  # Unlock the shared hash
-    }
+    # Create shared objects
+    my $shared_hash_object = \%shared_hash;
+    my $shared_array_object = \@shared_array;
+    my $shared_scalar_object = \$shared_scalar;
 
-    # Example method to get data from shared hash (simulated delay)
-    sub get_hash_data {
-        my ($self, $key) = @_;
-        lock(%{$self});  # Lock the shared hash for read
-        sleep 1;  # Simulate some time-consuming operation
-        my $value = $self->{$key};
-        unlock(%{$self});  # Unlock the shared hash
-        return $value;
-    }
-
-    # Example method to push data into shared array (simulated delay)
-    sub push_array_data {
-        my ($self, $value) = @_;
-        lock(@{$self});  # Lock the shared array for write
-        sleep 1;  # Simulate some time-consuming operation
-        push @{$self}, $value;
-        unlock(@{$self});  # Unlock the shared array
-    }
-
-    # Example method to pop data from shared array (simulated delay)
-    sub pop_array_data {
-        my ($self) = @_;
-        lock(@{$self});  # Lock the shared array for write
-        sleep 1;  # Simulate some time-consuming operation
-        my $value = pop @{$self};
-        unlock(@{$self});  # Unlock the shared array
-        return $value;
-    }
-
-    # Example method to set data in shared scalar (simulated delay)
-    sub set_scalar_data {
-        my ($self, $value) = @_;
-        lock(${$self});  # Lock the shared scalar for write
-        sleep 1;  # Simulate some time-consuming operation
-        ${$self} = $value;
-        unlock(${$self});  # Unlock the shared scalar
-    }
-
-    # Example method to get data from shared scalar (simulated delay)
-    sub get_scalar_data {
-        my ($self) = @_;
-        lock(${$self});  # Lock the shared scalar for read
-        sleep 1;  # Simulate some time-consuming operation
-        my $value = ${$self};
-        unlock(${$self});  # Unlock the shared scalar
-        return $value;
-    }
-
-    # Create objects from shared data structures
-    my $object_hash = \%shared_hash;
-    my $object_array = \@shared_array;
-    my $object_scalar = \$shared_scalar;
-
-    # Extend shared objects with custom methods using Extender
-    Extends($object_hash,
-        set_data => \&set_hash_data,
-        get_data => \&get_hash_data,
+    # Extend the shared hash object with custom methods
+    Extends($shared_hash_object,
+        set_hash_data => \&set_hash_data,
+        get_hash_data => \&get_hash_data,
     );
 
-    Extends($object_array,
-        push_data => \&push_array_data,
-        pop_data => \&pop_array_data,
+    # Extend the shared array object with custom methods
+    Extends($shared_array_object,
+        add_array_item => \&add_array_item,
+        get_array_item => \&get_array_item,
     );
 
-    Extends($object_scalar,
-        set_data => \&set_scalar_data,
-        get_data => \&get_scalar_data,
+    # Extend the shared scalar object with custom methods
+    Extends($shared_scalar_object,
+        set_scalar_data => \&set_scalar_data,
+        get_scalar_data => \&get_scalar_data,
     );
 
     # Create threads to manipulate shared objects concurrently
-    my @threads;
-    for my $i (1 .. 3) {
-        push @threads, threads->create(sub {
-            my $tid = threads->self->tid;
 
-            # Thread using shared hash object
-            $object_hash->set_data("key$i", "value$i");
-            my $hash_data = $object_hash->get_data("key$i");
-            print "Thread $tid: Retrieved hash data: $hash_data\n";
+    # Thread for shared hash object
+    my $hash_thread = threads->create(sub {
+        $shared_hash_object->set_hash_data('key1', 'value1');
+        print "Hash thread: key1 = " . $shared_hash_object->get_hash_data('key1') . "\n";
+    });
 
-            # Thread using shared array object
-            $object_array->push_data("item$i");
-            my $array_data = $object_array->pop_data();
-            print "Thread $tid: Retrieved array data: $array_data\n";
+    # Thread for shared array object
+    my $array_thread = threads->create(sub {
+        $shared_array_object->add_array_item('item1');
+        print "Array thread: item at index 0 = " . $shared_array_object->get_array_item(0) . "\n";
+    });
 
-            # Thread using shared scalar object
-            $object_scalar->set_data("scalar_value$i");
-            my $scalar_data = $object_scalar->get_data();
-            print "Thread $tid: Retrieved scalar data: $scalar_data\n";
-        });
-    }
+    # Thread for shared scalar object
+    my $scalar_thread = threads->create(sub {
+        $shared_scalar_object->set_scalar_data('shared_value');
+        print "Scalar thread: value = " . $shared_scalar_object->get_scalar_data() . "\n";
+    });
 
     # Wait for all threads to finish
-    $_->join for @threads;
+    $hash_thread->join();
+    $array_thread->join();
+    $scalar_thread->join();
 
