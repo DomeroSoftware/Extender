@@ -11,40 +11,28 @@ our @EXPORT = qw(Extend Extends);
 
 =head1 NAME
 
-Extender - Dynamically extend an object with methods from another module
-
-=head1 VERSION
-
-Version 1.00
-
-=cut
+Extender - Dynamically enhance Perl objects with additional methods from other modules or custom subroutines
 
 =head1 SYNOPSIS
 
-  use Extender;
+    use Extender;
 
-  # Extend an object with methods from a module
-  my $object = MyClass->new();
-  Extend($object, 'Some::Class');
+    # Example: Extend an object with methods from a module
+    my $object = MyClass->new();
+    Extend($object, 'Some::Class');
+    $object->method_from_some_class();
 
-  # Extend an object with custom methods
-  Extends($object,
-      greet => sub { my ($self, $name) = @_; print "Hello, $name!\n"; },
-      custom_method => \&some_function,
-  );
+    # Example: Extend an object with custom methods
+    Extends($object,
+        greet => sub { my ($self, $name) = @_; print "Hello, $name!\n"; },
+        custom_method => sub { return "Custom method executed"; },
+    );
+    $object->greet('Alice');
+    $object->custom_method();
 
 =head1 DESCRIPTION
 
-The C<Extender> module provides a mechanism to dynamically extend an object
-with methods exported by another Perl module. This module allows you to add
-methods to any Perl reference ($object), whether it's a hash reference,
-an array reference, or a scalar reference.
-
-This approach is powerful because it abstracts away the details of method
-creation and allows developers to enhance the capabilities of their data
-structures dynamically. It's particularly useful in scenarios where you want
-to extend the functionality of existing objects without modifying their
-original definitions or hierarchies.
+Extender is a Perl module that facilitates the dynamic extension of objects with methods from other modules or custom-defined subroutines. It allows you to enhance Perl objects—whether hash references, array references, or scalar references—with additional functionalities without altering their original definitions.
 
 =head1 EXPORTED FUNCTIONS
 
@@ -142,107 +130,276 @@ sub Extends {
     return $object;
 }
 
-=head1 EXAMPLES
+=head1 USAGE
 
-=head2 Example of extending an object with all methods from a module
+=head2 Extend an Object with Methods from a Module
 
-  package MyClass;
-  use Extender;
+    use Extender;
 
-  sub new {
-      my $class = shift;
-      my $self = bless {}, $class;
-      return $self;
-  }
+    # Extend an object with methods from a module
+    my $object = MyClass->new();
+    Extend($object, 'Some::Class');
 
-  my $object = MyClass->new();
-  Extend($object, 'Some::Class');
+    # Now $object can use any method from Some::Class
+    $object->method1(1, 2, 3, 4);
 
-  # Now $object can use any method from Some::Class
-  $object->method1(1, 2, 3, 4);
+=head2 Extend an Object with Custom Methods
 
-=head2 Example of extending an object with specific methods from a module
+    use Extender;
 
-  package AnotherClass;
-  use Extender;
+    # Extend an object with custom methods
+    my $object = MyClass->new();
+    Extends($object,
+        greet => sub { my ($self, $name) = @_; print "Hello, $name!\n"; },
+        custom_method => \&some_function,
+    );
 
-  sub new {
-      my $class = shift;
-      my $self = bless {}, $class;
-      return $self;
-  }
+    # Using the added methods
+    $object->greet('Alice');               # Output: Hello, Alice!
+    $object->custom_method('Hello');       # Assuming some_function prints something
 
-  my $object = AnotherClass->new();
-  Extend($object, 'Some::Class', 'method1', 'method2');
+=head2 Adding Methods to Raw Reference Variables
 
-  # Now $object can use method1 and method2 from Some::Class
-  $object->method1(1, 2, 3, 4);
-  $object->method2(1, 2, 3, 4);
+    package HashMethods;
 
-=head2 Example of adding methods using anonymous subroutines and existing functions
+    use strict;
+    use warnings;
+    use Exporter 'import';
+    our @EXPORT = qw(set get);
 
-  use Extender;
+    sub set {
+        my ($self, $key, $value) = @_;
+        $self->{$key} = $value;
+    }
 
-  package MyClass;
-  sub new {
-      my $class = shift;
-      my $self = bless {}, $class;
-      return $self;
-  }
+    sub get {
+        my ($self, $key) = @_;
+        return $self->{$key};
+    }
 
-  my $object = MyClass->new();
+    1;
 
-  Extends($object,
-      greet => sub { my ($self, $name) = @_; print "Hello, $name!\n"; },
-      custom_method => \&some_function,
-  );
+    package ArrayMethods;
 
-  # Using the added methods
-  $object->greet('Alice'); # Output: Hello, Alice!
-  $object->custom_method('Hello'); # Assuming some_function prints something
+    use strict;
+    use warnings;
+    use Exporter 'import';
+    our @EXPORT = qw(add get);
 
-=head2 Example of adding methods to raw reference variables
+    sub add {
+        my ($self, $item) = @_;
+        push @$self, $item;
+    }
 
-#!/usr/bin/perl
+    sub get {
+        my ($self, $index) = @_;
+        return $self->[$index];
+    }
 
-use strict;
-use warnings;
-use Extender;
+    1;
 
-# Example 1: Hash reference
-my $hash_object = {};
-my @methods_for_hash = ('set_value', 'get_value');
+    package ScalarMethods;
 
-# Extend $hash_object with methods
-Extend($hash_object, 'HashMethods', @methods_for_hash);
+    use strict;
+    use warnings;
+    use Exporter 'import';
+    our @EXPORT = qw(set get substr length);
 
-# Now $hash_object can use the added methods
-$hash_object->set_value('key', 'value');
-print $hash_object->get_value('key'), "\n";  # Outputs: value
+    sub set {
+        my ($self, $value) = @_;
+        $$self = $value;
+    }
 
-# Example 2: Array reference
-my $array_object = [];
-my @methods_for_array = ('add_item', 'get_item');
+    sub get {
+        my ($self) = @_;
+        return $$self;
+    }
 
-# Extend $array_object with methods
-Extend($array_object, 'ArrayMethods', @methods_for_array);
+    sub substr {
+        my $self = shift;
+        return substr($$self, @_);
+    }
 
-# Now $array_object can use the added methods
-$array_object->add_item('item1');
-$array_object->add_item('item2');
-print $array_object->get_item(0), "\n";  # Outputs: item1
+    sub length {
+        my ($self) = @_;
+        return length $$self;
+    }
 
-# Example 3: Scalar reference (assuming it contains a hash reference)
-my $scalar_object = {};
-my @methods_for_scalar = ('set_property', 'get_property');
+    1;
 
-# Extend $scalar_object with methods
-Extend($scalar_object, 'HashMethods', @methods_for_scalar);
+    # MAIN 
 
-# Now $scalar_object can use the added methods
-$scalar_object->set_property('name', 'John');
-print $scalar_object->get_property('name'), "\n";  # Outputs: John
+    package main;
 
+    use strict;
+    use warnings;
+    use Extender;
+    use HashMethods;
+    use ArrayMethods;
+    use ScalarMethods;
+
+    my $hash_object = {};
+    my $array_object = [];
+    my $scalar_object = \"";
+
+    # Extend $hash_object with methods from HashMethods
+    Extend($hash_object, 'HashMethods', 'set', 'get');
+
+    # Extend $array_object with methods from ArrayMethods
+    Extend($array_object, 'ArrayMethods', 'add', 'get');
+
+    # Extend $scalar_object with methods from ScalarMethods
+    Extend($scalar_object, 'ScalarMethods', 'set', 'get', 'substr', 'length');
+
+    # Using extended methods for hash object
+    $hash_object->set('key', 'value');
+    print $hash_object->get('key'), "\n";  # Outputs: value
+
+    # Using extended methods for array object
+    $array_object->add('item1');
+    $array_object->add('item2');
+    print $array_object->get(0), "\n";  # Outputs: item1
+
+    # Using extended methods for scalar object
+    $scalar_object->set('John');
+    print $scalar_object->get(), "\n";  # Outputs: John
+    print $scalar_object->length(), "\n";  # Outputs: 4
+    print $scalar_object->substr(1, 2), "\n";  # Outputs: oh
+    $scalar_object->substr(1, 2, "ane");
+    print $scalar_object->get(), "\n";  # Outputs: Jane
+
+    1;
+
+=head2 Adding methods using anonymous subroutines and existing functions
+
+    use Extender;
+
+    package MyClass;
+    sub new {
+        my $class = shift;
+        my $self = bless {}, $class;
+        return $self;
+    }
+
+    my $object = MyClass->new();
+
+    Extends($object,
+        greet => sub { my ($self, $name) = @_; print "Hello, $name!\n"; },
+        custom_method => \&some_function,
+    );
+
+    # Using the added methods
+    $object->greet('Alice'); # Output: Hello, Alice!
+    $object->custom_method('Hello'); # Assuming some_function prints something
+
+=head2 Using Shared Object for Shared Variable functionality
+
+    package main;
+
+    use strict;
+    use warnings;
+    use threads;
+    use threads::shared;
+    use Extender;
+
+    # Example methods to manipulate shared data
+
+    # Method to set data in a shared hash
+    sub set_hash_data {
+        my ($self, $key, $value) = @_;
+        lock(%{$self});
+        $self->{$key} = $value;
+    }
+
+    # Method to get data from a shared hash
+    sub get_hash_data {
+        my ($self, $key) = @_;
+        lock(%{$self});
+        return $self->{$key};
+    }
+
+    # Method to add item to a shared array
+    sub add_array_item {
+        my ($self, $item) = @_;
+        lock(@{$self});
+        push @{$self}, $item;
+    }
+
+    # Method to get item from a shared array
+    sub get_array_item {
+        my ($self, $index) = @_;
+        lock(@{$self});
+        return $self->[$index];
+    }
+
+    # Method to set data in a shared scalar
+    sub set_scalar_data {
+        my ($self, $value) = @_;
+        lock(${$self});
+        ${$self} = $value;
+    }
+
+    # Method to get data from a shared scalar
+    sub get_scalar_data {
+        my ($self) = @_;
+        lock(${$self});
+        return ${$self};
+    }
+
+    # Create shared data structures
+    my %shared_hash :shared;
+    my @shared_array :shared;
+    my $shared_scalar :shared;
+
+    # Create shared objects
+    my $shared_hash_object = \%shared_hash;
+    my $shared_array_object = \@shared_array;
+    my $shared_scalar_object = \$shared_scalar;
+
+    # Extend the shared hash object with custom methods
+    Extends($shared_hash_object,
+        set_hash_data => \&set_hash_data,
+        get_hash_data => \&get_hash_data,
+    );
+
+    # Extend the shared array object with custom methods
+    Extends($shared_array_object,
+        add_array_item => \&add_array_item,
+        get_array_item => \&get_array_item,
+    );
+
+    # Extend the shared scalar object with custom methods
+    Extends($shared_scalar_object,
+        set_scalar_data => \&set_scalar_data,
+        get_scalar_data => \&get_scalar_data,
+    );
+
+    # Create threads to manipulate shared objects concurrently
+
+    # Thread for shared hash object
+    my $hash_thread = threads->create(sub {
+        $shared_hash_object->set_hash_data('key1', 'value1');
+        print "Hash thread: key1 = " . $shared_hash_object->get_hash_data('key1') . "\n";
+    });
+
+    # Thread for shared array object
+    my $array_thread = threads->create(sub {
+        $shared_array_object->add_array_item('item1');
+        print "Array thread: item at index 0 = " . $shared_array_object->get_array_item(0) . "\n";
+    });
+
+    # Thread for shared scalar object
+    my $scalar_thread = threads->create(sub {
+        $shared_scalar_object->set_scalar_data('shared_value');
+        print "Scalar thread: value = " . $shared_scalar_object->get_scalar_data() . "\n";
+    });
+
+    # Wait for all threads to finish
+    $hash_thread->join();
+    $array_thread->join();
+    $scalar_thread->join();
+
+    1;
 =cut
 
 =head1 AUTHOR
