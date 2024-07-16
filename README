@@ -9,15 +9,29 @@ To install `Extender`, use CPAN or CPAN Minus:
 
 bash
 
-cpan Extender
+  cpan Extender
 
 
 or
 
 bash
 
-cpanm Extender
+  cpanm Extender
 
+
+Installation from GitHub
+To install Extender directly from GitHub, you can clone the repository and use the Makefile.PL:
+
+bash
+
+  git clone https://github.com/DomeroSoftware/Extender.git
+  cd Extender
+  perl Makefile.PL
+  make
+  make test
+  make install
+
+This will clone the repository, generate the Makefile, build the module, run the tests, and install it on your system.
 
 ## Usage
 
@@ -25,61 +39,61 @@ cpanm Extender
 
 perl
 
-use Extender;
+  use Extender;
 
-# Example: Extend an object with methods from a module
-my $object = MyClass->new();
-Extend($object, 'Some::Class');
+  # Example: Extend an object with methods from a module
+  my $object = MyClass->new();
+  Extend($object, 'Some::Class');
 
-# Now $object can use any method from Some::Class
-$object->method1(1, 2, 3, 4);
+  # Now $object can use any method from Some::Class
+  $object->method1(1, 2, 3, 4);
 
 
 ### Extend an Object with Custom Methods
 
 perl
 
-use Extender;
+  use Extender;
 
-# Example: Extend an object with custom methods
-my $object = MyClass->new();
-Extends($object,
-    greet => sub { my ($self, $name) = @_; print "Hello, $name!\n"; },
-    custom_method => \&some_function,
-);
+  # Example: Extend an object with custom methods
+  my $object = MyClass->new();
+  Extends($object,
+      greet => sub { my ($self, $name) = @_; print "Hello, $name!\n"; },
+      custom_method => \&some_function,
+  );
 
-# Using the added methods
-$object->greet('Alice');               # Output: Hello, Alice!
-$object->custom_method('Hello');       # Assuming some_function prints something
+  # Using the added methods
+  $object->greet('Alice');               # Output: Hello, Alice!
+  $object->custom_method('Hello');       # Assuming some_function prints something
 
 
 ### Adding Methods to Raw Reference Variables
 
 perl
 
-use Extender;
+  use Extender;
 
-# Example 1: Hash reference
-my $hash_object = {};
-my @methods_for_hash = ('set_value', 'get_value');
-Extend($hash_object, 'HashMethods', @methods_for_hash);
-$hash_object->set_value('key', 'value');
-print $hash_object->get_value('key'), "\n";  # Outputs: value
+  # Example 1: Hash reference
+  my $hash_object = {};
+  my @methods_for_hash = ('set_value', 'get_value');
+  Extend($hash_object, 'HashMethods', @methods_for_hash);
+  $hash_object->set_value('key', 'value');
+  print $hash_object->get_value('key'), "\n";  # Outputs: value
 
-# Example 2: Array reference
-my $array_object = [];
-my @methods_for_array = ('add_item', 'get_item');
-Extend($array_object, 'ArrayMethods', @methods_for_array);
-$array_object->add_item('item1');
-$array_object->add_item('item2');
-print $array_object->get_item(0), "\n";  # Outputs: item1
+  # Example 2: Array reference
+  my $array_object = [];
+  my @methods_for_array = ('add_item', 'get_item');
+  Extend($array_object, 'ArrayMethods', @methods_for_array);
+  $array_object->add_item('item1');
+  $array_object->add_item('item2');
+  print $array_object->get_item(0), "\n";  # Outputs: item1
 
-# Example 3: Scalar reference (assuming it contains a hash reference)
-my $scalar_object = {};
-my @methods_for_scalar = ('set_property', 'get_property');
-Extend($scalar_object, 'HashMethods', @methods_for_scalar);
-$scalar_object->set_property('name', 'John');
-print $scalar_object->get_property('name'), "\n";  # Outputs: John
+  # Example 3: Scalar reference (assuming it contains a hash reference)
+  my $scalar_object = {};
+  my @methods_for_scalar = ('set_property', 'get_property');
+  Extend($scalar_object, 'HashMethods', @methods_for_scalar);
+  $scalar_object->set_property('name', 'John');
+  print $scalar_object->get_property('name'), "\n";  # Outputs: John
 
 
 ## Exported Functions
