@@ -1,0 +1,18 @@
+Revision history for Extender
+
+1.00  2024-07-16
+    - Initial release of Extender module.
+    - Added functionality to dynamically extend objects with methods from other modules.
+    - Implemented `Extend` function to import methods from a module to an object.
+    - Implemented `Extends` function to add custom methods to an object.
+    - Added comprehensive documentation and examples.
+    - Created test suite (`t/Extender.t`) to validate module functionality.
+    - Generated `META.json` and `META.yml` files for CPAN distribution.
+    - Wrote README.md file with detailed instructions and examples.
+    - Added `Makefile.PL` for installation instructions.
+    - Included `LICENSE` file for open-source licensing details.
+    - Created `MANIFEST` listing all included files.
+    - Updated `META.json` and `META.yml` with accurate module information.
+    - Finalized `Extender.pl` script with comprehensive examples.
+    - Completed `t/Extender.t` test suite to cover all module functionalities.
+    - Prepared complete package for upload to PAUSE.

@@ -1,0 +1,32 @@
+{
+   "abstract" : "Dynamically extend an object with methods from another module",
+   "author" : [
+      "OnEhIppY <domerosoftware@gmail.com>"
+   ],
+   "dynamic_config" : 1,
+   "generated_by" : "Extender version 1.00",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "Extender",
+   "no_index" : {
+      "directory" : [
+         "t",
+         "lib"
+      ]
+   },
+   "prereqs" : {
+      "runtime" : {
+         "requires" : {
+            "Exporter" : "0",
+            "perl" : "5.008"
+         }
+      }
+   },
+   "release_status" : "stable",
+   "version" : "1.00"
+}
