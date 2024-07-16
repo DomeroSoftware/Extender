@@ -30,6 +30,13 @@ To install Extender directly from GitHub, you can clone the repository and use t
 ```
 This will clone the repository, generate the Makefile, build the module, run the tests, and install it on your system.
 
+```bash
+  make clean
+  cd ..
+  rm -rf ./Extender
+```
+This will clean the installation files from your disk after installation.
+
 ## Usage
 
 ### Extend an Object with Methods from a Module
