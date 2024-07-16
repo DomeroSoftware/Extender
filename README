@@ -74,26 +74,52 @@ perl
   use Extender;
 
   # Example 1: Hash reference
-  my $hash_object = {};
-  my @methods_for_hash = ('set_value', 'get_value');
-  Extend($hash_object, 'HashMethods', @methods_for_hash);
-  $hash_object->set_value('key', 'value');
-  print $hash_object->get_value('key'), "\n";  # Outputs: value
+    my $hash_object = {};
+    my @methods_for_hash = ('set_value', 'get_value');
+    Extend($hash_object, 'HashMethods', @methods_for_hash);
+    $hash_object->set_value('key', 'value');
+    print $hash_object->get_value('key'), "\n";  # Outputs: value
 
   # Example 2: Array reference
-  my $array_object = [];
-  my @methods_for_array = ('add_item', 'get_item');
-  Extend($array_object, 'ArrayMethods', @methods_for_array);
-  $array_object->add_item('item1');
-  $array_object->add_item('item2');
-  print $array_object->get_item(0), "\n";  # Outputs: item1
+    my $array_object = [];
+    my @methods_for_array = ('add_item', 'get_item');
+    Extend($array_object, 'ArrayMethods', @methods_for_array);
+    $array_object->add_item('item1');
+    $array_object->add_item('item2');
+    print $array_object->get_item(0), "\n";  # Outputs: item1
 
-  # Example 3: Scalar reference (assuming it contains a hash reference)
-  my $scalar_object = {};
-  my @methods_for_scalar = ('set_property', 'get_property');
-  Extend($scalar_object, 'HashMethods', @methods_for_scalar);
-  $scalar_object->set_property('name', 'John');
-  print $scalar_object->get_property('name'), "\n";  # Outputs: John
+  # Example 3: Scalar reference
+    use strict;
+    use warnings;
+    use Extender;
+
+    # Example: Scalar reference with custom methods
+
+    # Scalar variable
+    my $scalar = "hello";
+
+    # Creating a reference to $scalar
+    my $scalar_ref = \$scalar;
+
+    # Defining custom methods for scalar manipulation
+    Extends($scalar_ref,
+        capitalize => sub {
+            my $self = shift;
+            $$self = ucfirst $$self;  # Capitalize the string
+            return $self
+        },
+        append_text => sub {
+            my ($self, $text) = @_;
+            $$self .= $text;  # Append text to the string
+            return $self
+        }
+    );
+
+    # Applying custom methods to manipulate the scalar via its reference
+    $scalar_ref->capitalize->append_text(", Perl!");
+
+    # Dereferencing and printing the manipulated scalar
+    print $$scalar_ref, "\n";  # Outputs: Hello, Perl!
 
 
 ## Exported Functions
