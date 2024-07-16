@@ -88,12 +88,7 @@ perl
     $array_object->add_item('item2');
     print $array_object->get_item(0), "\n";  # Outputs: item1
 
-  # Example 3: Scalar reference
-    use strict;
-    use warnings;
-    use Extender;
-
-    # Example: Scalar reference with custom methods
+  # Example 3: Scalar reference with custom methods
 
     # Scalar variable
     my $scalar = "hello";
