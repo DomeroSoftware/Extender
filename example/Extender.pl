@@ -89,7 +89,7 @@
 
     my $hash_object = {};
     my $array_object = [];
-    my $scalar_object = {};
+    my $scalar_object = \"";
 
     # Extend $hash_object with methods
     Extend($hash_object, 'HashMethods', 'set_value', 'get_value');
@@ -98,7 +98,7 @@
     Extend($array_object, 'ArrayMethods', 'add_item', 'get_item');
 
     # Extend $scalar_object (assuming it contains a hash reference)
-    Extend($scalar_object, 'HashMethods', 'set_property', 'get_property');
+    Extend($scalar_object, 'ScalarMethods', 'set', 'get', 'substr', 'length');
 
     # Using extended methods
     $hash_object->set_value('key', 'value');
@@ -108,8 +108,8 @@
     $array_object->add_item('item2');
     print $array_object->get_item(0), "\n";  # Outputs: item1
 
-    $scalar_object->set_property('name', 'John');
-    print $scalar_object->get_property('name'), "\n";  # Outputs: John
+    $scalar_object->set('John');
+    print $scalar_object->get(), "\n";  # Outputs: John
 
 
 ### Scenario 5: Using Reference to Scalar with Code Ref
