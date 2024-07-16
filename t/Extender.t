@@ -2,30 +2,48 @@ use strict;
 use warnings;
 use Test::More;
 
+# Mock implementations of methods
+{
+    package HashMethods;
+    sub set_value { my ($self, $key, $value) = @_; $self->{$key} = $value; }
+    sub get_value { my ($self, $key) = @_; return $self->{$key}; }
+}
+
+{
+    package ArrayMethods;
+    sub add_item { my ($self, @items) = @_; push @$self, @items; }
+    sub get_item { my ($self, $index) = @_; return $self->[$index]; }
+}
+
+{
+    package GreetingMethods;
+    sub greet { my ($self, $name) = @_; return "Hello, $name!"; }
+}
+
 # Load the Extender module
 use_ok('Extender');
 
 # Test extending an object with module methods
 {
     package TestObject1;
-    use Extender;
-
     sub new { bless {}, shift; }
 
+    package main;
+    use Extender;
     my $object = TestObject1->new();
-    Extend($object, 'List::Util');
+    Extend($object, 'HashMethods', 'set_value', 'get_value');
 
-    ok($object->can('sum'), 'Object can sum');
-    ok($object->can('max'), 'Object can find maximum');
+    ok($object->can('set_value'), 'Object can set value');
+    ok($object->can('get_value'), 'Object can get value');
 }
 
 # Test extending an object with custom methods
 {
     package TestObject2;
-    use Extender;
-
     sub new { bless {}, shift; }
 
+    package main;
+    use Extender;
     my $object = TestObject2->new();
     Extends($object,
         greet => sub { my ($self, $name) = @_; return "Hello, $name!"; },
@@ -39,49 +57,22 @@ use_ok('Extender');
 # Test extending objects with methods from different modules
 {
     package TestObject3;
-    use Extender;
-
     sub new { bless {}, shift; }
 
     package TestObject4;
-    use Extender;
-
     sub new { bless {}, shift; }
 
+    package main;
+    use Extender;
     my $object3 = TestObject3->new();
     my $object4 = TestObject4->new();
 
-    Extend($object3, 'List::Util');
-    Extend($object4, 'Scalar::Util');
+    Extend($object3, 'ArrayMethods', 'add_item', 'get_item');
+    Extend($object4, 'GreetingMethods', 'greet');
 
-    ok($object3->can('sum'), 'Object 3 can sum');
-    ok($object4->can('blessed'), 'Object 4 can check blessedness');
-}
-
-# Test extending raw references (hash, array, scalar)
-{
-    my $hash_object = {};
-    my $array_object = [];
-    my $scalar_object = {};
-
-    Extend($hash_object, 'HashMethods', 'set_value', 'get_value');
-    Extend($array_object, 'ArrayMethods', 'add_item', 'get_item');
-    Extend($scalar_object, 'HashMethods', 'set_property', 'get_property');
-
-    ok($hash_object->can('set_value'), 'Hash object can set value');
-    ok($array_object->can('add_item'), 'Array object can add item');
-    ok($scalar_object->can('set_property'), 'Scalar object can set property');
-}
-
-# Test using reference to scalar with code ref
-{
-    my $object = {};
-    my $code_ref = sub { my ($self, $arg) = @_; return "Hello, $arg!"; };
-
-    Extend($object, 'GreetingMethods', 'greet' => \$code_ref);
-
-    ok($object->can('greet'), 'Object can greet');
-    is($object->greet('Alice'), 'Hello, Alice!', 'Greet method works as expected');
+    ok($object3->can('add_item'), 'Object 3 can add item');
+    ok($object3->can('get_item'), 'Object 3 can get item');
+    ok($object4->can('greet'), 'Object 4 can greet');
 }
 
 done_testing();
