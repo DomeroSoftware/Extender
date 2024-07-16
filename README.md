@@ -10,9 +10,7 @@ To install `Extender`, use CPAN or CPAN Minus:
 ```bash
   cpan Extender
 ```
-
 or
-
 ```bash
   cpanm Extender
 ```
