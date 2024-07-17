@@ -59,6 +59,8 @@ A Perl module that offers a wide range of functionalities to dynamically extend 
     - **Usage**: `MooseCompat($object, $role_name)`
     - **Example**: `MooseCompat($object, 'SomeRole')`
 
+Compared to existing CPAN modules, Extender offers a competitive set of dynamic functionalities suitable for extending Perl objects with methods, applying roles, and managing object lifecycle events. It strikes a balance between simplicity and flexibility, making it suitable for various types of reference objects that require dynamic method management and behavior extension. Depending on specific needs and preferences, developers can choose between Extender and other modules based on the level of features, performance, and complexity required for their projects.
+
 ### Explanation and Usage:
 
 - **Extend**: Useful for importing methods from external modules dynamically. It checks if the module is loaded, imports specified methods, and adds them to the object.
