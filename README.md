@@ -63,23 +63,24 @@ A Perl module that offers a wide range of functionalities to dynamically extend 
 
 - **Extend**: Useful for importing methods from external modules dynamically. It checks if the module is loaded, imports specified methods, and adds them to the object.
 ```perl
-use Module::Util qw(extend);
+my $object = SomeClass->new();
+Extend($object, 'SomeModule::method1', 'SomeModule::method2');
 
-# Assuming Module::Util exports a function `extend`
-extend($object, 'method1', 'method2');
+# Now $object has 'method1' and 'method2' imported from 'SomeModule'
 ```
   
 - **Extends**: Allows adding custom methods directly to an object. You can define methods inline using anonymous subroutines or reference existing functions.
 ```perl
-$object->extends(
-    {
-        custom_method => sub {
-            my ($self, $arg) = @_;
-            # Custom method implementation
-        },
-        another_method => \&existing_function,
-    }
-);
+my $object = SomeClass->new();
+Extends($object, {
+    custom_method => sub {
+        my ($self, $arg) = @_;
+        # Custom method implementation
+    },
+    another_method => \&existing_function,
+});
+
+# Now $object has 'custom_method' and 'another_method' added to it
 ```
 
 - **Override**: Replaces an existing method in the object with a new implementation. This is handy for modifying behavior without changing the object's original structure.
@@ -90,22 +91,22 @@ sub new_method {
 }
 
 # Override an existing method
-$object->override('existing_method', \&new_method);
+Override($object,'existing_method', \&new_method);
 ```
 
 - **Alias**: Creates an alias for an existing method. This alias allows using multiple names for the same underlying method implementation.
 ```perl
-$object->alias('existing_method', 'alias_method');
+Alias($object,'existing_method', 'alias_method');
 ```
 
 - **Unload**: Removes specified methods from the object. This can be useful for cleaning up unnecessary methods or dynamically managing object behaviors.
 ```perl
-$object->unload('method_to_remove');
+Unload($object,'method_to_remove');
 ```
 
 - **AddMethod**: Adds a new method to the object. This is useful when you want to dynamically extend an object's capabilities during runtime.
 ```perl
-$object->add_method('new_method_name', sub {
+AddMethod($object,'new_method_name', sub {
     my ($self, $arg) = @_;
     # Method implementation
 });
@@ -113,12 +114,22 @@ $object->add_method('new_method_name', sub {
 
 - **Decorate**: Decorates an existing method with custom behavior. It allows modifying the behavior of a method without directly altering its original implementation.
 ```perl
-$object->decorate('existing_method', sub {
+my $object = SomeClass->new();
+
+# Define the decorator subroutine
+my $decorator_sub = sub {
     my ($orig_method, $self, $arg) = @_;
     # Before calling the original method
-    $self->$orig_method($arg);
+    print "Before calling $method_name\n";
+    $self->$orig_method($arg);  # Call the original method
     # After calling the original method
-});
+    print "After calling $method_name\n";
+};
+
+# Apply the decorator to the object's method
+Decorate($object, 'existing_method', $decorator_sub);
+
+# Now, calling $object->existing_method($arg) will invoke the decorated behavior
 ```
 
 - **ApplyRole**: Applies a role (mixin) to an object, importing and applying its methods. This is useful for adding predefined sets of behavior to objects.
@@ -131,21 +142,42 @@ ApplyRole($object, 'SomeRole');
 
 - **InitHook**: Adds hooks that execute during object initialization or destruction phases. This allows injecting custom logic into object lifecycle events.
 ```perl
-$object->add_init_hook(
-    before_init => sub {
-        my ($self) = @_;
-        # Code to run before initialization
-    },
-    after_init => sub {
-        my ($self) = @_;
-        # Code to run after initialization
-    }
-);
+package MyClass;
+
+sub new {
+    my ($class, %args) = @_;
+    my $self = bless \%args, $class;
+    return $self;
+}
+
+# Adding init hooks using InitHook
+InitHook('MyClass', 'INIT', sub {
+    my ($self) = @_;
+    print "Initializing MyClass object\n";
+});
+
+InitHook('MyClass', 'DESTRUCT', sub {
+    my ($self) = @_;
+    print "Destroying MyClass object\n";
+});
+
+# Creating an object
+my $object = MyClass->new();
+
+# Performing some operations with $object
+
+# When $object goes out of scope or explicitly destroyed
+undef $object;
+
+# Output:
+# Initializing MyClass object
+# (Output of operations with $object)
+# Destroying MyClass object
 ```
 
 - **GenerateMethod**: Dynamically generates a method on an object using a generator code reference. This is useful when you want to create methods programmatically.
 ```perl
-$object->generate_method('dynamic_method', sub {
+GenerateMethod($object,'dynamic_method', sub {
     my ($self, $arg) = @_;
     # Generated method implementation
 });
