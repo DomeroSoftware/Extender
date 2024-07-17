@@ -62,26 +62,103 @@ A Perl module that offers a wide range of functionalities to dynamically extend 
 ### Explanation and Usage:
 
 - **Extend**: Useful for importing methods from external modules dynamically. It checks if the module is loaded, imports specified methods, and adds them to the object.
+```perl
+Copy code
+use Module::Util qw(extend);
+
+# Assuming Module::Util exports a function `extend`
+extend($object, 'method1', 'method2');
+```
   
 - **Extends**: Allows adding custom methods directly to an object. You can define methods inline using anonymous subroutines or reference existing functions.
-  
+```perl
+$object->extends(
+    {
+        custom_method => sub {
+            my ($self, $arg) = @_;
+            # Custom method implementation
+        },
+        another_method => \&existing_function,
+    }
+);
+```
+
 - **Override**: Replaces an existing method in the object with a new implementation. This is handy for modifying behavior without changing the object's original structure.
+```perl
+sub new_method {
+    my ($self, $arg) = @_;
+    # New implementation of the method
+}
+
+# Override an existing method
+$object->override('existing_method', \&new_method);
+```
 
 - **Alias**: Creates an alias for an existing method. This alias allows using multiple names for the same underlying method implementation.
+```perl
+$object->alias('existing_method', 'alias_method');
+```
 
 - **Unload**: Removes specified methods from the object. This can be useful for cleaning up unnecessary methods or dynamically managing object behaviors.
+```perl
+$object->unload('method_to_remove');
+```
 
 - **AddMethod**: Adds a new method to the object. This is useful when you want to dynamically extend an object's capabilities during runtime.
+```perl
+$object->add_method('new_method_name', sub {
+    my ($self, $arg) = @_;
+    # Method implementation
+});
+```
 
 - **Decorate**: Decorates an existing method with custom behavior. It allows modifying the behavior of a method without directly altering its original implementation.
+```perl
+$object->decorate('existing_method', sub {
+    my ($orig_method, $self, $arg) = @_;
+    # Before calling the original method
+    $self->$orig_method($arg);
+    # After calling the original method
+});
+```
 
 - **ApplyRole**: Applies a role (mixin) to an object, importing and applying its methods. This is useful for adding predefined sets of behavior to objects.
+```perl
+my $object = SomeClass->new();
+ApplyRole($object, 'SomeRole');
+
+# Now $object has methods from 'SomeRole'
+```
 
 - **InitHook**: Adds hooks that execute during object initialization or destruction phases. This allows injecting custom logic into object lifecycle events.
+```perl
+$object->add_init_hook(
+    before_init => sub {
+        my ($self) = @_;
+        # Code to run before initialization
+    },
+    after_init => sub {
+        my ($self) = @_;
+        # Code to run after initialization
+    }
+);
+```
 
 - **GenerateMethod**: Dynamically generates a method on an object using a generator code reference. This is useful when you want to create methods programmatically.
+```perl
+$object->generate_method('dynamic_method', sub {
+    my ($self, $arg) = @_;
+    # Generated method implementation
+});
+```
 
 - **MooseCompat**: Applies a Moose role to an object, providing Moose-like capabilities. This is beneficial when working with Moose roles in non-Moose environments.
+```perl
+my $object = SomeClass->new();
+MooseCompat($object, 'SomeRole');
+
+# Now $object has Moose-like capabilities from 'SomeRole'
+```
 
 Each function in the `Extender` module provides powerful tools for dynamically managing and extending Perl objects, enhancing flexibility and maintainability in your Perl projects.
 
