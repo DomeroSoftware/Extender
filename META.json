@@ -1,10 +1,10 @@
 {
-   "abstract" : "Dynamically extend an object with methods from another module",
+   "abstract" : "Dynamically enhance Perl objects with additional methods from other modules or custom subroutines",
    "author" : [
       "OnEhIppY <domerosoftware@gmail.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "Extender version 1.00",
+   "generated_by" : "Extender version 1.01",
    "license" : [
       "perl_5"
    ],
@@ -16,7 +16,8 @@
    "no_index" : {
       "directory" : [
          "t",
-         "lib"
+         "lib",
+         "example"
       ]
    },
    "prereqs" : {
@@ -28,5 +29,19 @@
       }
    },
    "release_status" : "stable",
-   "version" : "1.00"
+   "repository" : {
+      "type" : "git",
+      "url" : "https://github.com/DomeroSoftware/Extender.git",
+      "web" : "https://github.com/DomeroSoftware/Extender"
+   },
+   "resources" : {
+      "homepage" : "https://github.com/DomeroSoftware/Extender",
+      "bugtracker" : {
+         "web" : "https://github.com/DomeroSoftware/Extender/issues"
+      },
+      "repository" : {
+         "web" : "https://github.com/DomeroSoftware/Extender"
+      }
+   },
+   "version" : "1.01"
 }
