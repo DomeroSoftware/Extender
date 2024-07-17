@@ -1,6 +1,6 @@
 # Extender
 
-It seems like you have included a Perl module named `Extender` that offers a wide range of functionalities to dynamically extend Perl objects with additional methods. This module is particularly useful when you want to enhance Perl objects without modifying their original definitions directly. Here's a summary and explanation of each function provided by the `Extender` module:
+A Perl module that offers a wide range of functionalities to dynamically extend Perl objects with additional methods. This module is particularly useful when you want to enhance Perl objects without modifying their original definitions directly. Here's a summary and explanation of each function provided by the `Extender` module:
 
 ### Summary of Functions in `Extender` Perl Module:
 
