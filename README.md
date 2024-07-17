@@ -1,6 +1,89 @@
 # Extender
 
-Extender is a Perl module that facilitates the dynamic extension of objects with methods from other modules or custom-defined subroutines. It allows you to enhance Perl objects—whether hash references, array references, or scalar references—with additional functionalities without altering their original definitions.
+It seems like you have included a Perl module named `Extender` that offers a wide range of functionalities to dynamically extend Perl objects with additional methods. This module is particularly useful when you want to enhance Perl objects without modifying their original definitions directly. Here's a summary and explanation of each function provided by the `Extender` module:
+
+### Summary of Functions in `Extender` Perl Module:
+
+1. **Extend**:
+   - **Purpose**: Extends an object with methods from a specified module.
+   - **Usage**: `Extend($object, $module, @methods)`
+   - **Example**: `Extend($object, 'Some::Module', 'method1', 'method2')`
+
+2. **Extends**:
+   - **Purpose**: Extends an object with custom methods defined by the user.
+   - **Usage**: `Extends($object, %extend)`
+   - **Example**: `Extends($object, custom_method => sub { ... }, another_method => \&some_function)`
+
+3. **Override**:
+   - **Purpose**: Overrides an existing method in the object with a new implementation.
+   - **Usage**: `Override($object, $method_name, $new_method)`
+   - **Example**: `Override($object, 'existing_method', sub { ... })`
+
+4. **Alias**:
+   - **Purpose**: Creates an alias for an existing method in the object with a new name.
+   - **Usage**: `Alias($object, $existing_method, $new_name)`
+   - **Example**: `Alias($object, 'existing_method', 'new_alias')`
+
+5. **Unload**:
+   - **Purpose**: Removes specified methods from the object's namespace.
+   - **Usage**: `Unload($object, @methods)`
+   - **Example**: `Unload($object, 'method1', 'method2')`
+
+6. **AddMethod**:
+   - **Purpose**: Adds a new method to the object.
+   - **Usage**: `AddMethod($object, $method_name, $code_ref)`
+   - **Example**: `AddMethod($object, 'new_method', sub { ... })`
+
+7. **Decorate**:
+   - **Purpose**: Decorates an existing method with a custom decorator.
+   - **Usage**: `Decorate($object, $method_name, $decorator)`
+   - **Example**: `Decorate($object, 'method_to_decorate', sub { ... })`
+
+8. **ApplyRole**:
+   - **Purpose**: Applies a role (mixin) to an object.
+   - **Usage**: `ApplyRole($object, $role_class)`
+   - **Example**: `ApplyRole($object, 'SomeRole')`
+
+9. **InitHook**:
+   - **Purpose**: Adds initialization or destruction hooks to an object.
+   - **Usage**: `InitHook($object, $hook_name, $hook_code)`
+   - **Example**: `InitHook($object, 'INIT', sub { ... })`
+
+10. **GenerateMethod**:
+    - **Purpose**: Dynamically generates a method on an object.
+    - **Usage**: `GenerateMethod($object, $method_name, $generator_code)`
+    - **Example**: `GenerateMethod($object, 'new_method', sub { ... })`
+
+11. **MooseCompat**:
+    - **Purpose**: Applies a Moose role to an object using MooseX::Role::Parameterized::Extender::$role_name.
+    - **Usage**: `MooseCompat($object, $role_name)`
+    - **Example**: `MooseCompat($object, 'SomeRole')`
+
+### Explanation and Usage:
+
+- **Extend**: Useful for importing methods from external modules dynamically. It checks if the module is loaded, imports specified methods, and adds them to the object.
+  
+- **Extends**: Allows adding custom methods directly to an object. You can define methods inline using anonymous subroutines or reference existing functions.
+  
+- **Override**: Replaces an existing method in the object with a new implementation. This is handy for modifying behavior without changing the object's original structure.
+
+- **Alias**: Creates an alias for an existing method. This alias allows using multiple names for the same underlying method implementation.
+
+- **Unload**: Removes specified methods from the object. This can be useful for cleaning up unnecessary methods or dynamically managing object behaviors.
+
+- **AddMethod**: Adds a new method to the object. This is useful when you want to dynamically extend an object's capabilities during runtime.
+
+- **Decorate**: Decorates an existing method with custom behavior. It allows modifying the behavior of a method without directly altering its original implementation.
+
+- **ApplyRole**: Applies a role (mixin) to an object, importing and applying its methods. This is useful for adding predefined sets of behavior to objects.
+
+- **InitHook**: Adds hooks that execute during object initialization or destruction phases. This allows injecting custom logic into object lifecycle events.
+
+- **GenerateMethod**: Dynamically generates a method on an object using a generator code reference. This is useful when you want to create methods programmatically.
+
+- **MooseCompat**: Applies a Moose role to an object, providing Moose-like capabilities. This is beneficial when working with Moose roles in non-Moose environments.
+
+Each function in the `Extender` module provides powerful tools for dynamically managing and extending Perl objects, enhancing flexibility and maintainability in your Perl projects.
 
 ## Installation
 
