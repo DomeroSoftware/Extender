@@ -64,9 +64,13 @@ A Perl module that offers a wide range of functionalities to dynamically extend 
 - **Extend**: Useful for importing methods from external modules dynamically. It checks if the module is loaded, imports specified methods, and adds them to the object.
 ```perl
 my $object = SomeClass->new();
-Extend($object, 'SomeModule::method1', 'SomeModule::method2');
+Extend($object, 'SomeModule', 'method1', 'method2');
 
 # Now $object has 'method1' and 'method2' imported from 'SomeModule'
+
+Extend($object, 'OtherModule');
+
+# Now $object has all EXPORT methods imported from 'OtherModule'
 ```
   
 - **Extends**: Allows adding custom methods directly to an object. You can define methods inline using anonymous subroutines or reference existing functions.
