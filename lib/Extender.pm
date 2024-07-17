@@ -6,8 +6,8 @@ use strict;
 use warnings;
 use Exporter 'import';
 
-our $VERSION = '1.00';
-our @EXPORT = qw(Extend Extends);
+our $VERSION = '1.01';
+our @EXPORT = qw(Extend Extends Override Alias Unload AddMethod Decorate ApplyRole InitHook GenerateMethod MooseCompat);
 
 =head1 NAME
 
@@ -40,24 +40,35 @@ Extender is a Perl module that facilitates the dynamic extension of objects with
 
 =head2 Extend($object, $module, @methods)
 
-Extend the provided C<$object> with methods exported by C<$module>.
+Extends an object with methods from a specified module.
+
+=head3 Arguments:
 
 =over 4
 
-=item * C<$object>
+=item * C<$object> - The object reference to which methods will be added.
 
-The object to be extended with methods.
+=item * C<$module> - The name of the module from which methods will be imported.
 
-=item * C<$module>
-
-The name of the module from which methods should be imported.
-
-=item * C<@methods> (optional)
-
-Optional list of specific methods to import from C<$module>. If not provided,
-all functions exported by C<$module> will be added as methods to C<$object>.
+=item * C<@methods> - Optional list of method names to import. If none are provided, all exported functions from C<$module> will be imported.
 
 =back
+
+=head3 Description:
+
+This function extends the specified C<$object> by importing methods from the module C<$module>. It dynamically loads the module if it's not already loaded, retrieves the list of exported functions, and adds each specified function as a method to the object.
+
+=head3 Example:
+
+    use Extender;
+
+    # Create an object
+    my $object = {};
+
+    # Extend $object with methods from 'List::Util'
+    Extend($object, 'List::Util', 'sum', 'max');
+
+    # Now $object has 'sum' and 'max' methods from 'List::Util'
 
 =cut
 
@@ -83,23 +94,36 @@ sub Extend {
 
 =head2 Extends($object, %extend)
 
-Extends the provided C<$object> with multiple methods specified in the C<%extend> hash.
+Extends an object with custom methods.
+
+=head3 Arguments:
 
 =over 4
 
-=item * C<$object>
+=item * C<$object> - The object reference to which methods will be added.
 
-The object to be extended with methods. It should be a reference, typically a blessed hash reference.
-
-=item * C<%extend>
-
-A hash where the keys are method names and the values are coderefs, references to existing functions,
-or references to scalar variables containing coderefs.
+=item * C<%extend> - A hash where keys are method names and values are references to subroutines (CODE references). Alternatively, values can be references to scalars containing CODE references.
 
 =back
 
-If the method already exists in the object, an exception will be thrown. If the method reference is
-invalid (i.e., not a coderef or reference to a coderef), an exception will also be thrown.
+=head3 Description:
+
+This function extends the specified C<$object> by adding custom methods defined in C<%extend>. Each key-value pair in C<%extend> corresponds to a method name and its associated subroutine reference. If the method name already exists in C<$object>, it will override it.
+
+=head3 Example:
+
+    use Extender;
+
+    # Create an object
+    my $object = {};
+
+    # Define custom methods to extend $object
+    Extends($object,
+        custom_method => sub { return "Custom method" },
+        dynamic_method => \"sub { return 'Dynamic method' }",
+    );
+
+    # Now $object has 'custom_method' and 'dynamic_method'
 
 =cut
 
@@ -107,11 +131,6 @@ sub Extends {
     my ($object, %extend) = @_;
 
     for my $name (keys %extend) {
-        # Check if the method already exists
-        if (exists $object->{$name}) {
-            die "Method $name already exists in the object";
-        }
-
         # Create the method
         no strict 'refs';
         if (ref $extend{$name} eq 'CODE') {
@@ -125,6 +144,622 @@ sub Extends {
         else {
             die "Invalid method reference provided. Expected CODE or reference to CODEREF";
         }
+    }
+
+    return $object;
+}
+
+=head2 Override($object, $method_name, $new_method)
+
+Overrides an existing method in the object with a new implementation.
+
+=head3 Arguments:
+
+=over 4
+
+=item * C<$object> - The object reference in which the method will be overridden.
+
+=item * C<$method_name> - The name of the method to override.
+
+=item * C<$new_method> - Reference to the new method implementation (CODE reference).
+
+=back
+
+=head3 Description:
+
+This function overrides an existing method in the object with a new implementation provided as C<$new_method>. It allows for dynamic replacement of method behavior in Perl objects.
+
+=head3 Example:
+
+    use Extender;
+
+    my $object = {};
+
+    # Original method definition
+    sub original_method {
+        return "Original method";
+    }
+
+    # Override the 'original_method' in $object
+    Override($object, 'original_method', sub { return "New method"; });
+
+    # Using the overridden method
+    print $object->original_method(), "\n";  # Outputs: New method
+
+=cut
+
+sub Override {
+    my ($object, $method_name, $new_method) = @_;
+
+    # Check if $object is a blessed reference
+    die "Not a valid object reference" unless ref $object && ref $object ne 'HASH' && ref $object ne 'ARRAY' && ref $object ne 'SCALAR';
+
+    # Validate $method_name
+    die "Invalid method name. Method name must be a string" unless defined $method_name && $method_name =~ /^\w+$/;
+
+    # Validate $new_method
+    die "Invalid method reference provided. Expected CODE reference" unless ref $new_method eq 'CODE';
+
+    # Override the method
+    {
+        no strict 'refs';
+        no warnings 'redefine';
+        *{ref($object) . "::$method_name"} = $new_method;
+    }
+
+    return $object;
+}
+
+=head2 Alias($object, $existing_method, $new_name)
+
+Creates an alias for an existing method in the object with a new name.
+
+=head3 Arguments:
+
+=over 4
+
+=item * C<$object> - The object reference in which the alias will be created.
+
+=item * C<$existing_method> - The name of the existing method to alias.
+
+=item * C<$new_name> - The new name for the alias.
+
+=back
+
+=head3 Description:
+
+This function creates an alias for an existing method in the object with a new name. It allows referencing the same method implementation using different names within the same object.
+
+=head3 Example:
+
+    use Extender;
+
+    my $object = {};
+
+    # Original method definition
+    sub original_method {
+        return "Original method";
+    }
+
+    # Create an alias 'new_alias' for 'original_method' in $object
+    Alias($object, 'original_method', 'new_alias');
+
+    # Using the alias
+    print $object->new_alias(), "\n";  # Outputs: Original method
+
+=cut
+
+sub Alias {
+    my ($object, $existing_method, $new_name) = @_;
+
+    # Check if $object is a blessed reference
+    die "Not a valid object reference" unless ref $object && ref $object ne 'HASH' && ref $object ne 'ARRAY' && ref $object ne 'SCALAR';
+
+    # Validate $existing_method
+    die "Invalid method name. Method name must be a string" unless defined $existing_method && $existing_method =~ /^\w+$/;
+
+    # Validate $new_name
+    die "Invalid alias name. Alias name must be a string" unless defined $new_name && $new_name =~ /^\w+$/;
+
+    # Create the alias within the package where $object is blessed into
+    {
+        no strict 'refs';
+        no warnings 'redefine';
+        my $pkg = ref($object);
+        *{$pkg . "::$new_name"} = \&{$pkg . "::$existing_method"};
+    }
+
+    return $object;
+}
+
+=head2 Unload($object, @methods)
+
+Removes specified methods from the object's namespace.
+
+=head3 Arguments:
+
+=over 4
+
+=item * C<$object> - The object reference from which methods will be removed.
+
+=item * C<@methods> - List of method names to be removed from the object.
+
+=back
+
+=head3 Description:
+
+This function removes specified methods from the object's namespace. It effectively unloads or deletes methods that were previously added or defined within the object.
+
+=head3 Example:
+
+    use Extender;
+
+    my $object = {};
+
+    # Define a method
+    sub example_method {
+        return "Example method";
+    }
+
+    # Extend $object with the method
+    Extend($object, 'ExampleModule', 'example_method');
+
+    # Unload the method from $object
+    Unload($object, 'example_method');
+
+    # Attempting to use the unloaded method will fail
+    eval {
+        $object->example_method();  # This will throw an error
+    };
+    if ($@) {
+        print "Error: $@\n";
+    }
+
+=cut
+
+sub Unload {
+    my ($object, @methods) = @_;
+
+    # Check if $object is a blessed reference
+    die "Not a valid object reference" unless ref $object && ref $object ne 'HASH' && ref $object ne 'ARRAY' && ref $object ne 'SCALAR';
+
+    # Validate @methods
+    die "No methods specified for unloading" unless @methods;
+
+    no strict 'refs';
+    foreach my $method (@methods) {
+        # Delete the method from the object's namespace
+        delete ${ref($object) . "::"}{$method};
+    }
+    
+    return $object;
+}
+
+=head2 AddMethod($object, $method_name, $code_ref)
+
+Adds a new method to the object.
+
+=head3 Arguments:
+
+=over 4
+
+=item * C<$object> - The object reference to which the method will be added.
+
+=item * C<$method_name> - Name of the method to add. Must be a valid Perl subroutine name (word characters only).
+
+=item * C<$code_ref> - Reference to the subroutine (code reference) that defines the method.
+
+=back
+
+=head3 Description:
+
+This function adds a new method to the object's namespace. It validates the method name and code reference before adding it to the object.
+
+=head3 Example:
+
+    use Extender;
+
+    my $object = {};
+
+    # Define a new method
+    sub custom_method {
+        my ($self, $arg1, $arg2) = @_;
+        return "Custom method called with args: $arg1, $arg2";
+    }
+
+    # Add the method to $object
+    AddMethod($object, 'custom_method', \&custom_method);
+
+    # Using the added method
+    my $result = $object->custom_method('foo', 'bar');
+    print "$result\n";  # Outputs: Custom method called with args: foo, bar
+
+=cut
+
+sub AddMethod {
+    my ($object, $method_name, $code_ref) = @_;
+
+    # Validate method name
+    die "Method name must be a string" unless defined $method_name && $method_name =~ /^\w+$/;
+
+    # Validate code reference
+    die "Code reference required" unless ref($code_ref) eq 'CODE';
+
+    no strict 'refs';
+    *{ref($object) . "::$method_name"} = $code_ref;
+
+    return $object;
+}
+
+=head2 Decorate($object, $method_name, $decorator)
+
+Decorates an existing method of an object with a custom decorator.
+
+=head3 Arguments:
+
+=over 4
+
+=item * C<$object> - The object reference whose method is to be decorated.
+
+=item * C<$method_name> - The name of the method to decorate.
+
+=item * C<$decorator> - A coderef representing the decorator function.
+
+=back
+
+=head3 Description:
+
+This function allows decorating an existing method of an object with a custom decorator function. The original method is replaced with a new subroutine that invokes the decorator function before and/or after invoking the original method.
+
+=head3 Example:
+
+    use Extender;
+
+    # Define a decorator function
+    sub timing_decorator {
+        my ($self, $orig_method, @args) = @_;
+        my $start_time = time();
+        my $result = $orig_method->($self, @args);
+        my $end_time = time();
+        my $execution_time = $end_time - $start_time;
+        print "Execution time: $execution_time seconds\n";
+        return $result;
+    }
+
+    my $object = {};
+    $object->{counter} = 0;
+
+    # Add a method to increment a counter
+    $object->{increment} = sub { $object->{counter}++ };
+
+    # Decorate the 'increment' method with timing_decorator
+    Decorate($object, 'increment', \&timing_decorator);
+
+    # Invoke the decorated method
+    $object->increment();
+
+    # Output the counter value
+    print "Counter: ", $object->{counter}, "\n";
+
+=cut
+
+sub Decorate {
+    my ($object, $method_name, $decorator) = @_;
+
+    # Check if $object is an object or a class name
+    my $is_object = ref($object) ? 1 : 0;
+
+    # Fetch the original method reference
+    my $original_method;
+    if ($is_object) {
+        no strict 'refs';
+        my $coderef = $object->can($method_name);
+        die "Method $method_name does not exist in the object" unless $coderef;
+        $original_method = $coderef;
+    } else {
+        no strict 'refs';
+        $original_method = *{$object . '::' . $method_name}{CODE};
+        die "Method $method_name does not exist in the package" unless defined $original_method;
+    }
+
+    # Replace the method with a decorated version
+    if ($is_object) {
+        no strict 'refs';
+        my $class = ref $object;
+        no warnings 'redefine';
+        *{$class . "::$method_name"} = sub {
+            my $self = shift;
+            return $decorator->($self, $original_method, @_);
+        };
+    } else {
+        no strict 'refs';
+        no warnings 'redefine';
+        *{$object . "::$method_name"} = sub {
+            my $self = shift;
+            return $decorator->($self, $original_method, @_);
+        };
+    }
+
+    return $object
+}
+
+=head2 ApplyRole($object, $role_class)
+
+Applies a role (mixin) to an object, importing and applying its methods.
+
+=head3 Arguments:
+
+=over 4
+
+=item * C<$object> - The object reference to which the role will be applied.
+
+=item * C<$role_class> - The name of the role class to be applied.
+
+=back
+
+=head3 Description:
+
+This function loads a role class using C<require>, imports its methods into the current package, and applies them to the object using C<apply>.
+
+=head3 Example:
+
+    use Extender;
+
+    # Define a role (mixin)
+    package MyRole;
+    sub foo { print "foo\n" }
+    sub bar { print "bar\n" }
+
+    # Apply the role to an object
+    my $object = {};
+    ApplyRole($object, 'MyRole');
+
+    # Call the role methods
+    $object->foo();  # Outputs: foo
+    $object->bar();  # Outputs: bar
+
+=cut
+
+sub ApplyRole {
+    my ($object, $role_class) = @_;
+
+    die "Object must be provided for role application" unless defined $object;
+    die "Role class must be specified" unless defined $role_class && $role_class =~ /^\w+$/;
+
+    # Ensure role class is loaded
+    unless (exists $INC{$role_class} || defined *{"${role_class}::"}) {
+        eval "require $role_class";
+        return undef if $@;
+    }
+
+    # Apply the role's methods to the object if the apply method exists
+    eval {
+        no strict 'refs';
+        my $apply_method = $role_class->can('apply');
+        if ($apply_method) {
+            $apply_method->($role_class, $object);
+        } else {
+            die "Role $role_class does not implement apply method";
+        }
+    };
+    if ($@) {
+        if ($@ =~ /Role $role_class does not implement apply method/) {
+            return undef;  # Return gracefully if the apply method is missing
+        } else {
+            die "Failed to apply role $role_class to object: $@";
+        }
+    }
+
+    return $object
+}
+
+=head2 InitHook($object, $hook_name, $hook_code)
+
+Adds initialization or destruction hooks to an object.
+
+=head3 Arguments:
+
+=over 4
+
+=item * C<$object> - The object reference to which the hook will be added.
+
+=item * C<$hook_name> - The type of hook to add. Valid values are 'INIT' for initialization and 'DESTRUCT' for destruction.
+
+=item * C<$hook_code> - A code reference to the hook function to be executed.
+
+=back
+
+=head3 Description:
+
+This function adds a code reference to the specified hook array (`_init_hooks` or `_destruct_hooks`) in the object. Hooks can be executed during object initialization or destruction phases.
+
+=head3 Example:
+
+    package MyClass;
+
+    sub new {
+        my ($class)=@_;
+        my $self={};
+
+        # Add initialization hook
+        InitHook($self, 'INIT', sub {
+            print "Object initialized\n";
+        });
+
+        # Add destruction hook
+        InitHook($self, 'DESTRUCT', sub {
+            print "Object destroyed\n";
+        });
+
+        return bless $self, $class
+    }
+
+    use Extender;
+
+    # Create an object
+    my $object = MyClass->new();
+
+    # Destroy an object
+    undef $object;
+
+=cut
+
+sub InitHook {
+    my ($class, $hook_name, $hook_code) = @_;
+
+    # Validate arguments
+    die "Class name must be specified" unless defined $class && $class =~ /^\w+$/;
+    die "Unsupported hook name '$hook_name'" unless $hook_name =~ /^(INIT|DESTRUCT)$/;
+
+    no strict 'refs';
+
+    # Initialize hooks array if not already present
+    $class->{"_${hook_name}_hooks"} ||= [];
+
+    # Register the hook code
+    push @{$class->{"_${hook_name}_hooks"}}, $hook_code;
+
+    # If INIT hook, wrap the new method to execute hooks
+    if ($hook_name eq 'INIT') {
+        my $original_new = $class->can('new');
+        no warnings 'redefine';
+        *{$class . "::new"} = sub {
+            my $self = $original_new->(@_);
+            for my $hook (@{$class->{"_INIT_hooks"} || []}) {
+                $hook->($self);
+            }
+            return $self;
+        };
+    }
+
+    # If DESTRUCT hook, wrap the DESTROY method to execute hooks
+    elsif ($hook_name eq 'DESTRUCT') {
+        my $original_destroy = $class->can('DESTROY');
+        no warnings 'redefine';
+        *{$class . "::DESTROY"} = sub {
+            my $self = shift;
+            for my $hook (@{$class->{"_DESTRUCT_hooks"} || []}) {
+                $hook->($self);
+            }
+            $original_destroy->($self) if $original_destroy && ref($self);
+        };
+    }
+
+    return $class;
+}
+
+=head2 GenerateMethod($object, $method_name, $generator_code)
+
+Generates a method on an object using a generator code reference.
+
+=head3 Arguments:
+
+=over 4
+
+=item * C<$object> - The object reference to which the method will be added.
+
+=item * C<$method_name> - The name of the method to generate.
+
+=item * C<$generator_code> - A code reference that generates the method's functionality.
+
+=back
+
+=head3 Description:
+
+This function dynamically generates a new method on the specified object using the provided generator code reference (`$generator_code`). The generator code receives the object reference (`$self`) as the first argument, followed by any additional arguments passed to the method.
+
+=head3 Example:
+
+    use Extender;
+
+    # Create an object
+    my $object = {};
+
+    # Define a generator code reference
+    my $generator = sub {
+        my ($self, $arg1, $arg2) = @_;
+        return $arg1 + $arg2;
+    };
+
+    # Generate a new method 'add' on the object using the generator code
+    GenerateMethod($object, 'add', $generator);
+
+    # Call the generated method
+    my $result = $object->add(3, 4);  # $result will be 7
+
+=cut
+
+sub GenerateMethod {
+    my ($object, $method_name, $generator_code) = @_;
+    no strict 'refs';
+    
+    # Validate arguments
+    die "Method name must be a string" unless defined $method_name && $method_name =~ /^\w+$/;
+    die "Code reference required" unless ref($generator_code) eq 'CODE';
+    
+    # Dynamically create the method on the object
+    *{ref($object) . "::$method_name"} = sub {
+        my $self = shift;
+        return $generator_code->($self, @_);
+    };
+
+    return $object
+}
+
+=head2 MooseCompat($object, $role_name)
+
+Applies a Moose role to an object using MooseX::Role::Parameterized::Extender::$role_name.
+
+=head3 Arguments:
+
+=over 4
+
+=item * C<$object> - The object reference to which the role will be applied.
+
+=item * C<$role_name> - The name of the Moose role to apply.
+
+=back
+
+=head3 Description:
+
+This function attempts to apply a Moose role specified by C<$role_name> to the given object C<$object>.
+It dynamically loads the Moose role module using C<require>, applies it to the object, and handles any errors that occur during this process.
+
+=head3 Example:
+
+    use Extender;
+
+    # Create an object
+    my $object = {};
+
+    # Apply a Moose role 'Logger' to the object
+    MooseCompat($object, 'Logger');
+
+    # Now $object has the capabilities provided by the 'Logger' role
+
+=cut
+
+sub MooseCompat {
+    my ($object, $role_name) = @_;
+
+    die "Object must be provided for Moose role application" unless defined $object;
+    die "Role name must be specified" unless defined $role_name && $role_name =~ /^\w+$/;
+
+    # Construct full package name for the role
+    my $role_package = "MooseX::Role::Parameterized::Extender::${role_name}";
+
+    # Dynamically load the Moose role
+    unless (exists $INC{$role_package} || defined *{"${role_package}::"}) {
+        eval "require $role_package";
+        return undef if $@;
+    }
+
+    # Apply the role to the object
+    {
+        no strict 'refs';
+        my $apply_method = $role_package->can('apply');
+        return undef unless $apply_method;
+        $apply_method->($role_package, $object);
     }
 
     return $object;
