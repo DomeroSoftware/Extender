@@ -63,7 +63,6 @@ A Perl module that offers a wide range of functionalities to dynamically extend 
 
 - **Extend**: Useful for importing methods from external modules dynamically. It checks if the module is loaded, imports specified methods, and adds them to the object.
 ```perl
-Copy code
 use Module::Util qw(extend);
 
 # Assuming Module::Util exports a function `extend`
