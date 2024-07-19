@@ -1,6 +1,3 @@
-To make the README documentation clear about the types of references that `Extender` can work with, including raw HASH, ARRAY, SCALAR, GLOB references, and complete class objects, you can update the README with specific details under each function that handles these types. Here’s how you can integrate this information into your README:
-
----
 
 # Extender
 
@@ -199,7 +196,3 @@ This module is free software; you can redistribute it and/or modify it under the
 - [perlfunc](https://metacpan.org/pod/perlfunc)
 - [perlref](https://metacpan.org/pod/perlref)
 - [perlsub](https://metacpan.org/pod/perlsub)
-
----
-
-This updated README clearly communicates the flexibility of the `Extender` module with various reference types and class objects, ensuring users understand how to utilize it with different Perl constructs.
