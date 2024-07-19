@@ -1,7 +1,7 @@
 Revision history for Extender
 
 1.01  2024-07-16
-    - Added new functions: Override, Alias, Unload, AddMethod, Decorate, ApplyRole, InitHook, GenerateMethod, MooseCompat.
+    - Added new functions: Alias, AddMethod, Decorate, ApplyRole, InitHook, Unload.
     - Enhanced error handling and validation across all functions.
     - Updated documentation for clarity and completeness.
     - Fixed issues related to INIT and DESTRUCT hooks in `InitHook`.
