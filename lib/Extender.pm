@@ -661,9 +661,9 @@ It effectively unloads or deletes methods that were previously added or defined 
 
     ############################################################################
 
-=cut
-
 =head3 Supported Object Types: Can be used with HASH, ARRAY, SCALAR, GLOB references, or class objects.
+
+=cut
 
 sub Unload {
     my ($object, @methods) = @_;
