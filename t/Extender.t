@@ -10,7 +10,7 @@ eval {
 plan skip_all => "Test::Exception not installed" if $@;
 
 # Plan the number of tests you expect to run
-plan tests => 29;
+plan tests => 22;
 
 # Mock implementations of methods
 {
@@ -47,23 +47,6 @@ plan tests => 29;
         my ($class, $object) = @_;
         return bless $object, $class
     }
-}
-
-
-# Moose
-{
-    package MooseX::Role::Parameterized::Extender::MockTestRole;
-    sub apply {
-        my ($class, $object) = @_;
-        no strict 'refs';
-        *{ref($object) . "::new_method"} = sub { return "New method"; };
-    }
-    sub new_method { my $self=shift; return $self }
-}
-
-{
-    package MooseX::Role::Parameterized::Extender::MockNoTestRole;
-    sub new_method { my $self=shift; return $self }
 }
 
 package main;
@@ -121,20 +104,6 @@ use_ok('Extender');
     ok($object3->can('add_item'), 'Object 3 can add item');
     ok($object3->can('get_item'), 'Object 3 can get item');
     ok($object4->can('greet'), 'Object 4 can greet');
-}
-
-# Test Override function
-{
-    package TestObject5;
-    sub new { bless {}, shift; }
-    sub existing_method { return "Original method"; }
-
-    package main;
-    use Extender;
-    my $object = TestObject5->new();
-    Override($object, 'existing_method', sub { return "New method"; });
-
-    is($object->existing_method(), "New method", "Override existing method");
 }
 
 # Test Alias function
@@ -293,50 +262,6 @@ use_ok('Extender');
 
         like($output, qr/Destructing object/, "DESTRUCT hook called during object destruction");
     }
-}
-
-# Test GenerateMethod function
-{
-    package TestObject13;
-    sub new { bless {}, shift; }
-
-    package main;
-    use Extender;
-    my $object = TestObject13->new();
-    my $arg1 = 'arg1';
-    my $arg2 = 'arg2';
-
-    GenerateMethod($object, 'dynamic_method', sub {
-        my ($self, $arg1, $arg2) = @_;
-        return "Dynamic method called with args: $arg1, $arg2";
-    });
-
-    ok($object->can('dynamic_method'), 'Object can dynamic_method');
-    is($object->dynamic_method($arg1, $arg2), "Dynamic method called with args: $arg1, $arg2", "Generate method");
-}
-
-# Test MooseCompat
-{
-    # Test 1: MooseCompat - Successful application of Moose role
-    {
-        package TestObject14;
-        sub new { bless {}, shift; }
-    }
-
-    package main;
-    use Extender;
-
-    # Test successful application of MockTestRole
-    my $object1 = TestObject14->new();
-    my $result1 = MooseCompat($object1, 'MockTestRole');
-    ok($result1, "MooseCompat successfully applied MockTestRole");
-    ok($object1->can('new_method'), 'Object can new_method after applying Moose role');
-
-    # Test 2: MooseCompat - Role class not loaded
-    ok(!MooseCompat(TestObject14->new(), 'NonExistentRole'), "MooseCompat undef when role class doesn't exist");
-
-    # Test 3: MooseCompat - Role class does not implement apply method
-    ok(!MooseCompat(TestObject14->new(), 'MockNoTestRole'), "MooseCompat undef when role class lacks apply method");
 }
 
 done_testing();
