@@ -370,9 +370,9 @@ This function allows decorating an existing method of an object with a custom de
 
     ############################################################################
 
-=cut
-
 =head3 Supported Object Types: Can be used with HASH, ARRAY, SCALAR, GLOB references, or class objects.
+
+=cut
 
 sub Decorate {
     my ($object, $method_name, $decorator) = @_;
