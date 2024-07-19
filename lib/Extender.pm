@@ -26,6 +26,8 @@ Extender - Dynamically enhance Perl objects with additional methods from other m
 
 =head1 SYNOPSIS
 
+    ############################################################################
+
     use Extender;
 
     # Example: Extend an object with methods from a module
@@ -40,6 +42,8 @@ Extender - Dynamically enhance Perl objects with additional methods from other m
     );
     $object->greet('Alice');
     $object->custom_method();
+
+    ############################################################################
 
 =head1 DESCRIPTION
 
@@ -73,12 +77,24 @@ This function extends the specified C<$object> by importing methods from the mod
 
 =head3 Example:
 
+    ############################################################################
+
     use Extender;
 
     # Create an object and extend $object with methods from 'Hash::Util'
     my $object = Extend({}, 'Hash::Util', 'keys', 'values');
 
     # Now $object has 'keys' and 'values' methods from 'Hash::Util'
+
+    ############################################################################
+
+=head3 Supported Object Types: Can be applied to HASH, ARRAY, SCALAR, GLOB references, or a complete class object. For example:
+
+    my $hash_ref = Extend({}, 'HashMethods', 'method1', 'method2');
+    my $array_ref = Extend([], 'ArrayMethods', 'method1', 'method2');
+    my $scalar_ref = Extend(\(my $scalar = 'value'), 'ScalarMethods', 'method1');
+    my $glob_ref = Extend(\*GLOB, 'GlobMethods', 'method1');
+    my $class_ref = Extend(MyClass->new(), 'ClassMethods', 'method1');
 
 =cut
 
@@ -124,6 +140,8 @@ This function extends the specified C<$object> by adding custom methods defined 
 
 =head3 Example:
 
+    ############################################################################
+
     use Extender;
 
     # Create an object and define custom methods to extend $object
@@ -134,6 +152,19 @@ This function extends the specified C<$object> by adding custom methods defined 
     );
 
     # Now $object has 'custom_method' and 'dynamic_method'
+
+    ############################################################################
+
+=head3 Supported Object Types: Can be used with HASH, ARRAY, SCALAR, GLOB references, or class objects. For example:
+
+     Extends($hash_object, hash_method => sub { ... });
+     Extends($array_object, array_method => sub { ... });
+     Extends($scalar_object, scalar_method => sub { ... });
+     Extends($glob_object, glob_method => sub { ... });
+     Extends($hash_class, hash_method => sub { ... });
+     Extends($array_class, array_method => sub { ... });
+     Extends($scalar_class, scalar_method => sub { ... });
+     Extends($glob_class, glob_method => sub { ... });
 
 =cut
 
@@ -183,6 +214,8 @@ This function creates an alias for an existing method in the object with a new n
 
 =head3 Example:
 
+    ############################################################################
+
     use Extender;
 
     my $object = Extends({}, original_method => sub {
@@ -194,6 +227,10 @@ This function creates an alias for an existing method in the object with a new n
 
     # Using the alias
     print $object->new_alias(), "\n";  # Outputs: Original method
+
+    ############################################################################
+
+=head3 Supported Object Types: Can be used with HASH, ARRAY, SCALAR, GLOB references, or class objects.
 
 =cut
 
@@ -244,6 +281,8 @@ This function adds a new method to the object's namespace. It validates the meth
 
 =head3 Example:
 
+    ############################################################################
+
     use Extender;
 
     my $object = Extends({}, custom_method => sub {
@@ -257,6 +296,10 @@ This function adds a new method to the object's namespace. It validates the meth
     # Using the added method
     my $result = $object->custom_method2('foo', 'bar');
     print "$result\n";  # Outputs: Custom method2 called with args: foo, bar
+
+    ############################################################################
+
+=head3 Supported Object Types: Can be used with HASH, ARRAY, SCALAR, GLOB references, or class objects.
 
 =cut
 
@@ -299,6 +342,8 @@ This function allows decorating an existing method of an object with a custom de
 
 =head3 Example:
 
+    ############################################################################
+
     use Extender;
 
     # Define a decorator function
@@ -323,7 +368,11 @@ This function allows decorating an existing method of an object with a custom de
     # Output the counter value
     print "Counter: ", $object->{counter}, "\n";
 
+    ############################################################################
+
 =cut
+
+=head3 Supported Object Types: Can be used with HASH, ARRAY, SCALAR, GLOB references, or class objects.
 
 sub Decorate {
     my ($object, $method_name, $decorator) = @_;
@@ -387,6 +436,8 @@ This function loads a role class using C<require>, imports its methods into the 
 
 =head3 Example
 
+    ############################################################################
+
     # Define a role (mixin)
     package MyRole;
     
@@ -401,7 +452,10 @@ This function loads a role class using C<require>, imports its methods into the 
     sub foo { print "foo\n" }
     sub bar { print "bar\n" }
 
+    ############################################################################
+
     package main;
+
     use Extender;
 
     # Apply the role to an object
@@ -412,9 +466,14 @@ This function loads a role class using C<require>, imports its methods into the 
     $object->foo();  # Outputs: foo
     $object->bar();  # Outputs: bar
 
+    ############################################################################
+
+=head3 Supported Object Types: Can be used with HASH, ARRAY, SCALAR, GLOB references, or class objects.
+
 =cut
 
 sub ApplyRole {
+
     my ($object, $role_class) = @_;
 
     die "Object must be provided for role application" unless defined $object;
@@ -471,38 +530,49 @@ This function adds a code reference to the specified hook array (`_init_hooks` o
 
 =head3 Example:
 
+    ############################################################################
+
     package MyClass;
-    
-    use Extender;
-    
+
     sub new {
-        my ($class)=@_;
-        my $self=Extend({},'Extender');
-
-        # Add initialization hook
-        $self->InitHook('INIT', sub {
-            print "Object initialized\n";
-        });
-
-        # Add destruction hook
-        $self->InitHook('DESTRUCT', sub {
-            print "Object destroyed\n";
-        });
-
-        return bless $self, $class
+        my $self = bless {}, shift;
+        return $self;
     }
+
+    sub DESTROY {
+        my $self = shift;
+        # Implement destruction logic if needed
+    }
+
+    ############################################################################
 
     package main;
 
-    # Create an object
-    my $object = MyClass->new();
+    use Extender;
+    use MyClass;
 
-    # Destroy an object
-    undef $object;
+    InitHook('MyClass', 'INIT', sub {
+        print "Initializing object\n";
+    });
+
+    InitHook('MyClass', 'DESTRUCT', sub {
+        print "Destructing object\n";
+    });
+
+    my $object = MyClass->new(); # Output: Initializing object
+    undef $object; # Output: Destructing object
+
+    ############################################################################
+
+=head3 Supported Object Types: Can only be used on class names. For example:
+
+    use ClassName;
+
+    InitHook('ClassName', 'INIT', sub { print "Hash object initialized\n" });
+    InitHook('ClassName', 'DESTRUCT', sub { print "Array object destructed\n" });
 
 =cut
 
-    
 sub InitHook {
     my ($class, $hook_name, $hook_code) = @_;
 
@@ -570,6 +640,8 @@ It effectively unloads or deletes methods that were previously added or defined 
 
 =head3 Example:
 
+    ############################################################################
+
     use Extender;
 
     my $object = Extends({}, example_method => sub {
@@ -587,7 +659,11 @@ It effectively unloads or deletes methods that were previously added or defined 
         print "Error: $@\n";
     }
 
+    ############################################################################
+
 =cut
+
+=head3 Supported Object Types: Can be used with HASH, ARRAY, SCALAR, GLOB references, or class objects.
 
 sub Unload {
     my ($object, @methods) = @_;
@@ -628,6 +704,8 @@ sub Unload {
 
 =head2 Extend an Object with Methods from a Module
 
+    ############################################################################
+
     use Extender;
 
     # Extend an object with methods from a module
@@ -636,7 +714,11 @@ sub Unload {
     # Now $object can use any method from Some::Class
     $object->method1(1, 2, 3, 4);
 
+    ############################################################################
+
 =head2 Extend an Object with Custom Methods
+
+    ############################################################################
 
     use Extender;
 
@@ -651,7 +733,11 @@ sub Unload {
     $object->greet('Alice');               # Output: Hello, Alice!
     $object->custom_method('Hello');       # Assuming some_function prints something
 
+    ############################################################################
+
 =head2 Adding Methods to Raw Reference Variables
+
+    ############################################################################
 
     package HashMethods;
 
@@ -672,6 +758,8 @@ sub Unload {
 
     1;
 
+    ############################################################################
+
     package ArrayMethods;
 
     use strict;
@@ -690,6 +778,8 @@ sub Unload {
     }
 
     1;
+
+    ############################################################################
 
     package ScalarMethods;
 
@@ -720,7 +810,7 @@ sub Unload {
 
     1;
 
-    # MAIN 
+    ############################################################################
 
     package main;
 
@@ -763,7 +853,11 @@ sub Unload {
 
     1;
 
+    ############################################################################
+
 =head2 Adding methods using anonymous subroutines and existing functions
+
+    ############################################################################
 
     package MyClass;
     sub new {
@@ -771,7 +865,10 @@ sub Unload {
         return bless {}, $class;
     }
 
+    ############################################################################
+
     package main;
+
     use Extender;
 
     my $object = MyClass->new();
@@ -785,7 +882,11 @@ sub Unload {
     $object->greet('Alice'); # Output: Hello, Alice!
     $object->custom_method('Hello'); # Assuming some_function prints something
 
+    ############################################################################
+
 =head2 Using Shared Object for Shared Variable functionality
+
+    ############################################################################
 
     package main;
 
@@ -794,6 +895,8 @@ sub Unload {
     use threads;
     use threads::shared;
     use Extender;
+
+    ############################################################################
 
     # Example methods to manipulate shared data
 
@@ -839,6 +942,8 @@ sub Unload {
         return ${$self};
     }
 
+    ############################################################################
+
     # Create shared data structures
     my %shared_hash :shared;
     my @shared_array :shared;
@@ -848,6 +953,8 @@ sub Unload {
     my $shared_hash_object = \%shared_hash;
     my $shared_array_object = \@shared_array;
     my $shared_scalar_object = \$shared_scalar;
+
+    ############################################################################
 
     # Extend the shared hash object with custom methods
     Extends($shared_hash_object,
@@ -866,6 +973,8 @@ sub Unload {
         set_scalar_data => \&set_scalar_data,
         get_scalar_data => \&get_scalar_data,
     );
+
+    ############################################################################
 
     # Create threads to manipulate shared objects concurrently
 
@@ -887,6 +996,8 @@ sub Unload {
         print "Scalar thread: value = " . $shared_scalar_object->get_scalar_data() . "\n";
     });
 
+    ############################################################################
+
     # Wait for all threads to finish
     $hash_thread->join();
     $array_thread->join();
@@ -894,7 +1005,11 @@ sub Unload {
 
     1;
 
+    ############################################################################
+
 =head2 Updating existing methods on an object class
+
+    ############################################################################
 
     package MyClass;
 
@@ -908,7 +1023,10 @@ sub Unload {
         return "Original method";
     }
 
+    ############################################################################
+
     package main;
+
     use Extender;
 
     my $object = MyClass->new();
@@ -923,11 +1041,17 @@ sub Unload {
 
     1;
 
+    ############################################################################
+
 =head2 Creating Extender Class objects from any (even shared) reference typed variable
+
+    ############################################################################
 
     package main;
 
     use Extender;
+
+    ############################################################################
 
     my $object = Extend({},'Extender');
 
@@ -939,6 +1063,8 @@ sub Unload {
     # Using the method
     print $object->method(), "\n";  # Outputs: method
 
+    ############################################################################
+
     my $array = Extend([],'Extender');
 
     # Define a method with the same name as an existing method
@@ -948,6 +1074,8 @@ sub Unload {
 
     # Using the method
     print $array->method(), "\n";  # Outputs: method
+
+    ############################################################################
 
     my $scalar = Extend(\"",'Extender');
 
@@ -959,7 +1087,56 @@ sub Unload {
     # Using the method
     print $scalar->method(), "\n";  # Outputs: method
 
+    ############################################################################
+
+    my $glob = Extend(\*GLOB,'Extender');
+
+    # Define a method with the same name as an existing method
+    $glob->Extends(
+        method => sub { return "method"; },
+    );
+
+    # Using the method
+    print $glob->method(), "\n";  # Outputs: method
+
     1;
+
+    ############################################################################
+
+=head2 Creating INIT and DESTRUCT Hooks
+
+    ############################################################################
+
+    package TestObject;
+
+    sub new {
+        my $self = bless {}, shift;
+        return $self;
+    }
+
+    sub DESTROY {
+        my $self = shift;
+        # Implement destruction logic if needed
+    }
+
+    ############################################################################
+
+    package main;
+
+    use Extender;
+
+    InitHook('TestObject', 'INIT', sub {
+        print "Initializing object\n";
+    });
+
+    InitHook('TestObject', 'DESTRUCT', sub {
+        print "Destructing object\n";
+    });
+
+    my $object = TestObject->new(); # Output: Initializing object
+    undef $object; # Output: Destructing object
+
+    ############################################################################
 
 =cut
 
