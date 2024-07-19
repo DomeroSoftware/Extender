@@ -144,7 +144,7 @@
 ### Scenario 4: Adding Methods to Raw References (Hash, Array, Scalar)
 
     # PACKAGES
-    
+
     package HashMethods;
 
     use strict;
@@ -378,5 +378,220 @@
     $hash_thread->join();
     $array_thread->join();
     $scalar_thread->join();
+
+    1;
+
+# Alias - The Alias function creates an alias for an existing method on an object.
+
+    package MyClass;
+
+    sub new {
+        my $class = shift;
+        my $self = bless {}, $class;
+        return $self;
+    }
+
+    sub original_method {
+        return "Original method";
+    }
+
+    package main;
+
+    use Extender;
+
+    my $object = MyClass->new();
+
+    # Create an alias for 'original_method' as 'alias_method'
+    Alias($object, 'alias_method', 'original_method');
+
+    # Using the alias method
+    print $object->alias_method(), "\n";  # Outputs: Original method
+
+    1;
+
+# Unload - The Unload function removes a method from an object.
+
+    package MyClass;
+
+    sub new {
+        my $class = shift;
+        my $self = bless {}, $class;
+        return $self;
+    }
+
+    sub method1 {
+        return "Method 1";
+    }
+
+    sub method2 {
+        return "Method 2";
+    }
+
+    package main;
+
+    use Extender;
+
+    my $object = MyClass->new();
+
+    # Before Unload
+    print $object->method1(), "\n";  # Outputs: Method 1
+    print $object->method2(), "\n";  # Outputs: Method 2
+
+    # Unload 'method1'
+    Unload($object, 'method1');
+
+    # After Unload
+    # 'method1' should not be available
+    eval {
+        $object->method1();
+    };
+    warn "Error: $@" if $@;  # Outputs: Error: Can't locate object method "method1" via package
+
+    # 'method2' should still be available
+    print $object->method2(), "\n";  # Outputs: Method 2
+
+    1;
+
+# AddMethod - The AddMethod function dynamically adds a new method to an object.
+
+    package MyClass;
+
+    sub new {
+        my $class = shift;
+        my $self = bless {}, $class;
+        return $self;
+    }
+
+    package main;
+
+    use Extender;
+
+    my $object = MyClass->new();
+
+    # Add a new method 'new_method'
+    AddMethod($object, 'new_method', sub { return "New method"; });
+
+    # Using the added method
+    print $object->new_method(), "\n";  # Outputs: New method
+
+    1;
+
+# Decorate - The Decorate function wraps an existing method on an object with additional behavior.
+
+    package MyClass;
+
+    sub new {
+        my $class = shift;
+        my $self = bless {}, $class;
+        return $self;
+    }
+
+    sub original_method {
+        return "Original method";
+    }
+
+    package main;
+
+    use Extender;
+
+    my $object = MyClass->new();
+
+    # Decorate 'original_method'
+    Decorate($object, 'original_method', sub {
+        my ($self, $original, @args) = @_;
+        return "Before: " . $original->($self, @args) . " After";
+    });
+
+    # Using the decorated method
+    print $object->original_method(), "\n";  # Outputs: Before: Original method After
+
+    1;
+
+# ApplyRole - The ApplyRole function applies methods from a role package to an object.
+
+    package TestRole;
+
+    sub apply {
+        my ($class, $object) = @_;
+        no strict 'refs';
+        *{$object . "::new_method"} = sub { return "New method"; };
+    }
+
+    package MyClass;
+
+    sub new {
+        my $class = shift;
+        my $self = bless {}, $class;
+        return $self;
+    }
+
+    package main;
+
+    use Extender;
+
+    my $object = MyClass->new();
+
+    # Apply 'TestRole' to $object
+    ApplyRole($object, 'TestRole');
+
+    # Using the applied method
+    print $object->new_method(), "\n";  # Outputs: New method
+
+    1;
+
+# InitHook - The InitHook function attaches initialization and destruction hooks to an object.
+
+    package MyClass;
+
+    use Extender;
+
+    sub new {
+        my $class = shift;
+
+        # Initialization $self
+        my $self = Extend({}, 'Extender');
+
+        # Initialization INIT hook
+        $self->InitHook('INIT', sub { print "Initializing object\n" });
+
+        # Destruction DESTRUCT hook
+        $self->InitHook('DESTRUCT', sub { print "Destructing object\n" });
+
+        return bless $self, $class
+    }
+
+    package main;
+
+    use MyClass;
+
+    # Creating an instance triggers INIT hook
+    my $object = MyClass->new();  # Outputs: Initializing object
+
+    # Destroying an instance triggers DESTRUCT hook
+    undef $object;  # Outputs: Destructing object
+
+    1;
+
+# Creating Extender Class objects from any (even shared) reference typed variable except for CODE refrerences
+
+    package main;
+
+    use Extender;
+
+    my $object = Extend({},'Extender');
+    $object->Extends( method => sub { return "method"; } );
+    print $object->method(), "\n";  # Outputs: method
+
+    my $array = Extend([],'Extender');
+    $array->Extends( method => sub { return "method"; } );
+    print $array->method(), "\n";  # Outputs: method
+
+    my $scalar = Extend(\"",'Extender');
+    $scalar->Extends( method => sub { return "method"; } );
+    print $scalar->method(), "\n";  # Outputs: method
+
+    my $glob = Extend(\*GLOB,'Extender');
+    $glob->Extends( method => sub { return "method"; } );
+    print $glob->method(), "\n";  # Outputs: method
 
     1;
