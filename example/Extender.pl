@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+################################################################################
 
 ### Scenario 1: Extending an Object with Module Methods
 
@@ -19,6 +20,8 @@
         print "$key: ", $self->{$key} // 'undefined', "\n";
     }
 
+    ############################################################################
+
     package MyObject;
 
     sub new {
@@ -26,6 +29,8 @@
         my $self = bless { count => 0 }, $class;
         return $self;
     }
+
+    ############################################################################
 
     package main;
 
@@ -56,6 +61,8 @@
         my $self = bless { data => [] }, $class;
         return $self;
     }
+
+    ############################################################################
 
     package main;
 
@@ -94,6 +101,8 @@
         print "Value: $$self\n";
     }
 
+    ############################################################################
+
     package MyClass1;
 
     sub new {
@@ -102,6 +111,8 @@
         return $self;
     }
 
+    ############################################################################
+
     package MyClass2;
 
     sub new {
@@ -109,6 +120,8 @@
         my $self = bless \0, $class;
         return $self;
     }
+
+    ############################################################################
 
     package main;
 
@@ -143,6 +156,8 @@
 
 ### Scenario 4: Adding Methods to Raw References (Hash, Array, Scalar)
 
+    ############################################################################
+
     # PACKAGES
 
     package HashMethods;
@@ -164,6 +179,8 @@
 
     1;
 
+    ############################################################################
+
     package ArrayMethods;
 
     use strict;
@@ -182,6 +199,8 @@
     }
 
     1;
+
+    ############################################################################
 
     package ScalarMethods;
 
@@ -211,6 +230,8 @@
     }
 
     1;
+
+    ############################################################################
 
     # MAIN 
 
@@ -284,6 +305,8 @@
 
     # Example methods to manipulate shared data
 
+    ############################################################################
+
     # Method to set data in a shared hash
     sub set_hash_data {
         my ($self, $key, $value) = @_;
@@ -297,6 +320,8 @@
         lock(%{$self});
         return $self->{$key};
     }
+
+    ############################################################################
 
     # Method to add item to a shared array
     sub add_array_item {
@@ -312,6 +337,8 @@
         return $self->[$index];
     }
 
+    ############################################################################
+
     # Method to set data in a shared scalar
     sub set_scalar_data {
         my ($self, $value) = @_;
@@ -326,6 +353,8 @@
         return ${$self};
     }
 
+    ############################################################################
+
     # Create shared data structures
     my %shared_hash :shared;
     my @shared_array :shared;
@@ -335,6 +364,8 @@
     my $shared_hash_object = \%shared_hash;
     my $shared_array_object = \@shared_array;
     my $shared_scalar_object = \$shared_scalar;
+
+    ############################################################################
 
     # Extend the shared hash object with custom methods
     Extends($shared_hash_object,
@@ -353,6 +384,8 @@
         set_scalar_data => \&set_scalar_data,
         get_scalar_data => \&get_scalar_data,
     );
+
+    ############################################################################
 
     # Create threads to manipulate shared objects concurrently
 
@@ -374,6 +407,8 @@
         print "Scalar thread: value = " . $shared_scalar_object->get_scalar_data() . "\n";
     });
 
+    ############################################################################
+
     # Wait for all threads to finish
     $hash_thread->join();
     $array_thread->join();
@@ -394,6 +429,8 @@
     sub original_method {
         return "Original method";
     }
+
+    ############################################################################
 
     package main;
 
@@ -426,6 +463,8 @@
     sub method2 {
         return "Method 2";
     }
+
+    ############################################################################
 
     package main;
 
@@ -462,6 +501,8 @@
         return $self;
     }
 
+    ############################################################################
+
     package main;
 
     use Extender;
@@ -490,6 +531,8 @@
         return "Original method";
     }
 
+    ############################################################################
+
     package main;
 
     use Extender;
@@ -517,6 +560,8 @@
         *{$object . "::new_method"} = sub { return "New method"; };
     }
 
+    ############################################################################
+
     package MyClass;
 
     sub new {
@@ -524,6 +569,8 @@
         my $self = bless {}, $class;
         return $self;
     }
+
+    ############################################################################
 
     package main;
 
@@ -541,34 +588,31 @@
 
 # InitHook - The InitHook function attaches initialization and destruction hooks to an object.
 
-    package MyClass;
+    package TestObject;
 
-    use Extender;
+    sub new { return bless {}, shift }
 
-    sub new {
-        my $class = shift;
-
-        # Initialization $self
-        my $self = Extend({}, 'Extender');
-
-        # Initialization INIT hook
-        $self->InitHook('INIT', sub { print "Initializing object\n" });
-
-        # Destruction DESTRUCT hook
-        $self->InitHook('DESTRUCT', sub { print "Destructing object\n" });
-
-        return bless $self, $class
+    sub DESTROY {
+        my $self = shift;
+        # Implement destruction logic if needed
     }
+
+    ############################################################################
 
     package main;
 
-    use MyClass;
+    use Extender;
 
-    # Creating an instance triggers INIT hook
-    my $object = MyClass->new();  # Outputs: Initializing object
+    InitHook('TestObject', 'INIT', sub {
+        print "Initializing object\n";
+    });
 
-    # Destroying an instance triggers DESTRUCT hook
-    undef $object;  # Outputs: Destructing object
+    InitHook('TestObject', 'DESTRUCT', sub {
+        print "Destructing object\n";
+    });
+
+    my $object = TestObject->new(); # Output: Initializing object
+    undef $object; # Output: Destructing object
 
     1;
 
