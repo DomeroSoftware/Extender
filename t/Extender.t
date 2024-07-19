@@ -120,24 +120,6 @@ use_ok('Extender');
     is($object->alias_method(), "Original method", "Alias method should return original method");
 }
 
-# Test Unload function
-{
-    package TestObject7;
-    sub new { bless {}, shift; }
-    sub method1 { return "Method 1"; }
-    sub method2 { return "Method 2"; }
-
-    package main;
-    use Extender;
-    my $object = TestObject7->new();
-    ok($object->can('method1'), 'Object can method1 before Unload');
-    ok($object->can('method2'), 'Object can method2 before Unload');
-
-    Unload($object, 'method1');
-    ok(!$object->can('method1'), 'Object cannot method1 after Unload');
-    ok($object->can('method2'), 'Object can method2 after Unload');
-}
-
 # Test AddMethod function
 {
     package TestObject8;
@@ -262,6 +244,24 @@ use_ok('Extender');
 
         like($output, qr/Destructing object/, "DESTRUCT hook called during object destruction");
     }
+}
+
+# Test Unload function
+{
+    package TestObject7;
+    sub new { bless {}, shift; }
+    sub method1 { return "Method 1"; }
+    sub method2 { return "Method 2"; }
+
+    package main;
+    use Extender;
+    my $object = TestObject7->new();
+    ok($object->can('method1'), 'Object can method1 before Unload');
+    ok($object->can('method2'), 'Object can method2 before Unload');
+
+    Unload($object, 'method1');
+    ok(!$object->can('method1'), 'Object cannot method1 after Unload');
+    ok($object->can('method2'), 'Object can method2 after Unload');
 }
 
 done_testing();
