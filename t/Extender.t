@@ -1,6 +1,20 @@
 use strict;
 use warnings;
 use Test::More;
+use Extender;
+use IO::Scalar;
+use Try::Tiny;
+
+
+local $SIG{__WARN__} = sub {
+    my $warning = shift;
+    warn "Warning: $warning";
+};
+
+local $SIG{__DIE__} = sub {
+    my $error = shift;
+    die "Error: $error";
+};
 
 # Check for Test::Exception module
 eval {
@@ -10,7 +24,7 @@ eval {
 plan skip_all => "Test::Exception not installed" if $@;
 
 # Plan the number of tests you expect to run
-plan tests => 22;
+plan tests => 25;
 
 # Mock implementations of methods
 {
@@ -108,13 +122,13 @@ use_ok('Extender');
 
 # Test Alias function
 {
-    package TestObject6;
+    package TestObject5;
     sub new { bless {}, shift; }
     sub original_method { return "Original method"; }
 
     package main;
     use Extender;
-    my $object = TestObject6->new();
+    my $object = TestObject5->new();
     Alias($object, 'original_method', 'alias_method');
 
     is($object->alias_method(), "Original method", "Alias method should return original method");
@@ -122,12 +136,12 @@ use_ok('Extender');
 
 # Test AddMethod function
 {
-    package TestObject8;
+    package TestObject6;
     sub new { bless {}, shift; }
 
     package main;
     use Extender;
-    my $object = TestObject8->new();
+    my $object = TestObject6->new();
     AddMethod($object, 'new_method', sub { return "New method"; });
 
     ok($object->can('new_method'), 'Object can new_method');
@@ -136,13 +150,13 @@ use_ok('Extender');
 
 # Test Decorate function with regular subroutine
 {
-    package TestObject10;
+    package TestObject7;
     sub new { bless {}, shift; }
     sub original_method { return "Original method" }
 
     package main;
     use Extender;
-    my $object = TestObject10->new();
+    my $object = TestObject7->new();
     Decorate($object, 'original_method', sub {
         my ($self, $original, @args) = @_;
         return "Before: " . $original->($self, @args) . " After";
@@ -154,7 +168,7 @@ use_ok('Extender');
 # Test ApplyRole
 {
     {
-        package TestObject11;
+        package TestObject8;
         sub new { bless {}, shift; }
     }
 
@@ -163,7 +177,7 @@ use_ok('Extender');
 
     # Test 1: Successful application of role
     {
-        my $object = TestObject11->new();
+        my $object = TestObject8->new();
         my $result = ApplyRole($object, 'MockRole');
         ok($result, "ApplyRole successfully applied MockRole");
         ok($object->can('new_method'), 'Object can new_method after applying MockRole');
@@ -171,7 +185,7 @@ use_ok('Extender');
 
     # Test 2: Role class not loaded
     {
-        my $object = TestObject11->new();
+        my $object = TestObject8->new();
         my $result = ApplyRole($object, 'NotExistingRole');
         ok(!$result, "ApplyRole should return undef for non-existing role");
         # You can add additional checks if needed
@@ -179,7 +193,7 @@ use_ok('Extender');
 
     # Test 3: Role class does not implement apply method
     {
-        my $object = TestObject11->new();
+        my $object = TestObject8->new();
         my $result = ApplyRole($object, 'MockNoRole');
         ok(!$result, "ApplyRole should return undef for role without apply method");
         # You can add additional checks if needed
@@ -188,7 +202,7 @@ use_ok('Extender');
 
 # Test InitHook function
 {
-    package TestObject12;
+    package TestObject9;
     sub new {
         my $self = bless {}, shift;
         return $self;
@@ -218,12 +232,12 @@ use_ok('Extender');
     {
         my $output = capture_stdout {
             # Register INIT hook
-            InitHook('TestObject12', 'INIT', sub {
+            InitHook('TestObject9', 'INIT', sub {
                 print "Initializing object\n";
             });
 
             # Initialize object
-            my $object = TestObject12->new();
+            my $object = TestObject9->new();
         };
 
         like($output, qr/Initializing object/, "INIT hook called during object initialization");
@@ -233,12 +247,12 @@ use_ok('Extender');
     {
         my $output = capture_stdout {
             # Register DESTRUCT hook
-            InitHook('TestObject12', 'DESTRUCT', sub {
+            InitHook('TestObject9', 'DESTRUCT', sub {
                 print "Destructing object\n";
             });
 
             # Initialize and then destroy object
-            my $object = TestObject12->new();
+            my $object = TestObject9->new();
             undef $object;
         };
 
@@ -248,20 +262,87 @@ use_ok('Extender');
 
 # Test Unload function
 {
-    package TestObject7;
+    package TestObject10;
     sub new { bless {}, shift; }
     sub method1 { return "Method 1"; }
     sub method2 { return "Method 2"; }
 
     package main;
     use Extender;
-    my $object = TestObject7->new();
+    my $object = TestObject10->new();
     ok($object->can('method1'), 'Object can method1 before Unload');
     ok($object->can('method2'), 'Object can method2 before Unload');
 
     Unload($object, 'method1');
     ok(!$object->can('method1'), 'Object cannot method1 after Unload');
     ok($object->can('method2'), 'Object can method2 after Unload');
+}
+
+# Test adding and using the 'write' method on *STDOUT
+{
+    package main;
+
+    sub capture_output {
+        my ($code) = @_;
+        my $output;
+        {
+            local *STDOUT;
+            tie *STDOUT, 'IO::Scalar', \$output;
+            $code->();
+        }
+        return $output;
+    }
+
+    my $stdout = Extends(\*{STDOUT}, 'write', sub {
+        my ($self, $message) = @_;
+        print $self $message;
+    });
+
+    my $output = capture_output(sub {
+        $stdout->write("This is a test for *STDOUT");
+    });
+
+    is($output, "This is a test for *STDOUT", "Method 'write' added to *STDOUT works");
+
+    # Reset STDOUT
+    untie *STDOUT;
+    *STDOUT = *main::STDOUT{IO};
+}
+
+# Test adding and using the 'read' method on *STDIN
+{
+    package main;
+
+    # Helper function to simulate STDIN
+    sub simulate_stdin {
+        my ($input, $code) = @_;
+        open my $fh, '<', \$input;
+        {
+            local *STDIN = $fh;
+            $code->();
+        }
+        close $fh;
+    }
+
+    # Extend *STDIN with a 'read' method
+    my $stdin = Extends(\*STDIN, 'read', sub {
+        my ($self, $buffer, $length, $offset) = @_;
+        $buffer = '' unless defined $buffer;
+        my $result = read($self, $buffer, $length, $offset);
+        return $result ? $buffer : undef;
+    });
+
+    my $input = "This is a test for *STDIN\n";
+    simulate_stdin($input, sub {
+        my $buffer;
+        my $read_length = $stdin->read($buffer, length($input));
+        is($buffer, $input, "Method 'read' added to *STDIN works");
+        is($read_length, length($input), "Correct length read from *STDIN");
+    });
+
+    # Reset STDIN
+    untie *STDIN;
+    *STDIN = *main::STDIN{IO};
 }
 
 done_testing();
