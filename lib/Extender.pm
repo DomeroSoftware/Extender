@@ -13,7 +13,7 @@ use warnings;
 use Exporter 'import';
 
 our $VERSION = '1.01';
-our @EXPORT = qw(Extend Extends Alias AddMethod Decorate ApplyRole InitHook Unload);
+our @EXPORT = qw(Extend Extends GlobExtends Alias AddMethod Decorate ApplyRole InitHook Unload);
 
 ################################################################################
 =pod
@@ -174,13 +174,21 @@ sub Extends {
     for my $name (keys %extend) {
         # Create the method
         no strict 'refs';
+        my $package = ref($object) || $object;  # Get the package or class name
+
         if (ref $extend{$name} eq 'CODE') {
             # If $extend{$name} is a coderef, directly assign it
-            *{ref($object) . "::$name"} = sub { unshift @_, $object; goto &{$extend{$name}} };
+            *{$package . "::$name"} = sub {
+                my $self = shift;
+                return $extend{$name}->($self, @_);
+            };
         }
         elsif (ref $extend{$name} eq 'SCALAR' && defined ${$extend{$name}} && ref ${$extend{$name}} eq 'CODE') {
             # If $method_ref is a reference to a scalar containing a coderef
-            *{ref($object) . "::$name"} = sub { unshift @_, $object; goto &${$extend{$name}} };
+            *{$package . "::$name"} = sub {
+                my $self = shift;
+                return ${$extend{$name}}->($self, @_);
+            };
         }
         else {
             die "Invalid method reference provided for $name. Expected CODE or reference to CODEREF but got ".(ref($extend{$name})).".";
@@ -1137,6 +1145,109 @@ sub Unload {
     undef $object; # Output: Destructing object
 
     ############################################################################
+
+=head2 Creating an STDERR Logger with decorative functionalities
+
+    use strict;
+    use warnings;
+    use Time::Piece;
+
+    ############################################################################
+    # BaseLogger.pm
+    package BaseLogger;
+    use strict;
+    use warnings;
+
+    sub new {
+        my $class = shift;
+        return bless {}, $class;
+    }
+
+    sub log {
+        my ($self, $message) = @_;
+        print STDERR $message;
+    }
+
+    1;
+
+    ############################################################################
+    # LoggerDecorators.pm
+    package LoggerDecorators;
+
+    use strict;
+    use warnings;
+    use Time::Piece;
+
+    # Timestamp decorator
+    sub add_timestamp {
+        my ($logger) = @_;
+        return sub {
+            my ($self, $message) = @_;
+            my $timestamp = localtime->strftime('%Y-%m-%d %H:%M:%S');
+            $logger->($self, "[$timestamp] $message");
+        };
+    }
+
+    # Log level decorator
+    sub add_log_level {
+        my ($logger, $level) = @_;
+        return sub {
+            my ($self, $message) = @_;
+            $logger->($self, "[$level] $message");
+        };
+    }
+
+    1;
+
+    ############################################################################
+    # Example.pl
+
+    package main;
+    use strict;
+    use warnings;
+    use BaseLogger;
+    use LoggerDecorators;
+
+    # Create an instance of BaseLogger
+    my $logger = BaseLogger->new();
+
+    # Create a decorated logger
+    my $decorated_logger = sub {
+        my ($self, $message) = @_;
+        $logger->log($message);
+    };
+
+    # Apply decorators to extend logging functionality
+    $decorated_logger = add_timestamp($decorated_logger);
+    $decorated_logger = add_log_level($decorated_logger, 'INFO');
+
+    # Helper function to capture STDERR output
+    sub capture_stderr {
+        my ($code) = @_;
+        my $output;
+        {
+            open my $stderr_backup, '>&', STDERR or die "Cannot backup STDERR: $!";
+            open STDERR, '>', \$output or die "Cannot redirect STDERR: $!";
+            
+            $code->();
+            
+            open STDERR, '>&', $stderr_backup or die "Cannot restore STDERR: $!";
+            close $stderr_backup;
+        }
+        return $output;
+    }
+
+    # Capture logging output
+    my $stderr_output = capture_stderr(sub {
+        $decorated_logger->("This is a test message\n");
+    });
+
+    # Output captured log
+    print "Captured STDERR output:\n";
+    print $stderr_output;
+
+    1;
+
 
 =cut
 
