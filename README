@@ -14,9 +14,9 @@ A Perl module that offers a wide range of functionalities to dynamically extend 
      ```perl
      my $hash_ref = Extend({}, 'HashMethods', 'method1', 'method2');
      my $array_ref = Extend([], 'ArrayMethods', 'method1', 'method2');
-     my $scalar_ref = Extend(\(my $scalar = 'value'), 'ScalarMethods', 'method1');
-     my $glob_ref = Extend(\*GLOB, 'GlobMethods', 'method1');
-     my $class_ref = Extend(MyClass->new(), 'ClassMethods', 'method1');
+     my $scalar_ref = Extend(\(my $scalar = 'value'), 'ScalarMethods');
+     my $glob_ref = Extend(\*MyGLOB, 'GlobMethods');
+     my $class_ref = Extend(MyClass->new(), 'OtherClassMethods');
      ```
 
 2. **Extends**:
@@ -66,13 +66,13 @@ A Perl module that offers a wide range of functionalities to dynamically extend 
 
 7. **InitHook**:
    - **Purpose**: Adds initialization or destruction hooks to an object.
-   - **Usage**: `InitHook($object, $hook_name, $hook_code)`
-   - **Example**: `InitHook($object, 'INIT', sub { ... })`
+   - **Usage**: `InitHook('PackageName', $hook_name, $hook_code)`
+   - **Example**: `InitHook('PackageName', 'INIT', sub { ... })`
 
    - **Supported Object Types**: Can be used with HASH, ARRAY, SCALAR, GLOB references, or class objects. For example:
      ```perl
-     InitHook($hash_object, 'INIT', sub { print "Hash object initialized\n" });
-     InitHook($array_object, 'DESTRUCT', sub { print "Array object destructed\n" });
+     InitHook('HashClass', 'INIT', sub { print "Hash object initialized\n" });
+     InitHook('ArrayClass', 'DESTRUCT', sub { print "Array object destructed\n" });
      ```
 
 8. **Unload**:
